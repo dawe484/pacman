@@ -20,22 +20,28 @@ let Sprite = PIXI.Sprite;
 
 //Define a few globals here
 const GAME_WIDTH = 608, //960
-    GAME_HEIGHT = 800, //540
-    TILE_SIZE = 32,
-    OFFSET = 2,
-    SPEED = 1,
-    ORANGEBALLVALUE = 10;
+      GAME_HEIGHT = 800, //540
+      TILE_SIZE = 32,
+      OFFSET = 2,
+      SPEED = 1,
+      ORANGEBALLVALUE = 10;
     
 let renderer;
-let stage, menuScene, gameScene;
+let stage, menuScene, gameScene, gameOverScene;
 let stats;
 
-let id, btnStart;
+let id, btnStart, btnHelp, btnMusic, btnSound;
 let left, right, up, down, esc;
 var box, pinkBall, orangeBall, iceCube, dablik, lisak, pistolnik, princezna;
 
-//set the game's current state to 'play'
-let state = playing;
+//set the game's current state to 'menu'
+let state = menu;
+
+let level0 = [
+  "bbbbbbbbbbbb",
+  "b....n.....b",
+  "bbbbbbbbbbbb"
+]
 
 let level1 = [
   "bbbbbbbbbbbbbbbbbbb",
@@ -62,12 +68,13 @@ let level1 = [
   "bbbbbbbbbbbbbbbbbbb"
 ]
 
-let pacman, pacmanLife1, pacmanLife2;
+let pacman, pacmanMenu, pacmanLife1, pacmanLife2, pacmanTitle;
 let boxes = [], ghosts = [], orangeBalls = [], pinkBalls = [];
 let moveRight = true, moveLeft = true, moveUp = true, moveDown = true;
 let rightPressed = false, leftPressed = false, upPressed = false, downPressed = false;
 let orientationX, orientationY, pacmanOrientationX, pacmanOrientationY;
-let playerName, playerScore, playerNameText, playerScoreText;
+let playerName, playerScore, playerNameText, playerScoreText, message, playMessage,
+    style, styleTitle;
 
 let frames = ["pacman-open.png", "pacman-close.png"];;
 let frameIndex, frameTime, delta, lasttime, currtime;
@@ -135,22 +142,123 @@ function init() {
     //Create the `menuScene` group
     menuScene = new Container();
     gameScene = new Container();
+    gameOverScene = new Container();
     
-    menuScene.visible = false;
+    menuScene.visible = true;
+    gameScene.visible = false;
+    gameOverScene.visible = false;
         
     id = PIXI.loader.resources["assets/images/pacmanImages.json"].textures;
-        
+    
+    // Create font style
+    style = new PIXI.TextStyle({
+      fontFamily: 'Consolas',
+      fontSize: 28,
+      fontWeight: 'bold',
+      wordWrap: true,
+      wordWrapWidth: 440,
+      fill: "white"
+    });
+    
+    styleTitle = new PIXI.TextStyle({
+      fontFamily: 'Consolas',
+      fontSize: 52,
+      fontWeight: 'bold',
+      wordWrap: true,
+      wordWrapWidth: 440,
+      fill: "#ffcc00"
+    });
+    
+    pacmanTitle = new PIXI.Text("PACMAN 2017", styleTitle);
+    pacmanTitle.anchor.set(0.5);
+    pacmanTitle.position.set(GAME_WIDTH/2, 7*TILE_SIZE);
+    
     // Create 'menuScene'
     btnStart = new Sprite(id["button.png"]);
-
-    menuScene.addChild(btnStart);
+    btnStart.anchor.set(0.5);
+    btnStart.position.set(GAME_WIDTH/2, GAME_HEIGHT - 7*TILE_SIZE);
+    btnStart.interactive = true;
+    btnStart.buttonMode = true;
+    btnStart.mouseover = function onButtonOver() {
+      let overStyle = new PIXI.TextStyle({
+        fontFamily: 'Consolas',
+        fontSize: 28,
+        fontWeight: 'bold',
+        wordWrap: true,
+        wordWrapWidth: 440,
+        fill: "#ffcc00"
+      });
+      playMessage.setStyle(overStyle);
+    };
     
+    btnStart.mouseout = function onButtonOut() {
+      playMessage.setStyle(style);
+    };
+    
+    btnStart.click = function onButtonClick() {
+      state = playing;
+      pacman.vx = 0;
+      pacman.vy = 0;
+    }
+    
+    playMessage = new PIXI.Text("PLAY", style);
+    playMessage.anchor.set(0.5);
+    playMessage.position.set(GAME_WIDTH/2, GAME_HEIGHT - 7*TILE_SIZE);
+
+    btnHelp = new Sprite(id["questionMark.png"]);
+    btnHelp.anchor.set(0.5);
+    btnHelp.position.set(GAME_WIDTH - 2*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    
+    btnMusic = new Sprite(id["music.png"]);
+    btnMusic.anchor.set(0.5);
+    btnMusic.position.set(GAME_WIDTH - 4*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    
+    btnSound = new Sprite(id["sound.png"]);
+    btnSound.anchor.set(0.5);
+    btnSound.position.set(GAME_WIDTH - 6*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    
+    for (let i = 0; i < level0.length; i++) {
+      for (let c = 0; c < level0[i].length; c++) {
+        if (level0[i][c] == 'b') {
+          box = new Sprite(id["krabice.png"]);
+          box.anchor.set(0.5);
+          box.position.x = c * TILE_SIZE + 4*TILE_SIZE;
+          box.position.y = i * TILE_SIZE + 10*TILE_SIZE;
+          //box.scale.set(2);
+          menuScene.addChild(box);
+          //boxes.push(box);
+        }
+        if (level0[i][c] == '.') {
+          orangeBall = new Sprite(id["orange-ball.png"]);
+          orangeBall.anchor.x = 0.5;
+          orangeBall.anchor.y = 0.5;
+          orangeBall.position.x = c * TILE_SIZE + 4*TILE_SIZE;
+          orangeBall.position.y = i * TILE_SIZE + 10*TILE_SIZE;
+          menuScene.addChild(orangeBall);
+          //orangeBalls.push(orangeBall);
+        }
+      }
+    }
+    
+    frameIndex = 0;
+    
+    // Create pacman
+    pacmanMenu = new Sprite(id[frames[frameIndex]]);
+    frameTime = FRAMERATE;
+    pacmanMenu.anchor.set(0.5);
+    pacmanMenu.position.set(8*TILE_SIZE + TILE_SIZE, 11*TILE_SIZE);
+    pacmanMenu.vx = 0;
+    pacmanMenu.vy = 0;
+    pacmanOrientationX = pacmanMenu.scale.x = 1;
+    pacmanOrientationY = pacmanMenu.scale.y = 1;
+    
+    menuScene.addChild(pacmanTitle, btnStart, playMessage, btnHelp, btnMusic, btnSound, pacmanMenu);
+    //End 'menuScene'
+    
+    // Create 'gameScene'
     //console.log(level1.length)
     for (let i = 0; i < level1.length; i++) {
-      //console.log(level1[i]);
-      //console.log(level1[i].length);
       for (let c = 0; c < level1[i].length; c++) {
-        //console.log(level1[i][c])
         if (level1[i][c] == 'b') {
           box = new Sprite(id["krabice.png"]);
           box.anchor.x = 0.5;
@@ -191,9 +299,9 @@ function init() {
     
     console.log(orangeBalls.length);
     console.log(orangeBalls);
-    console.log(orangeBalls.pop());
+    //console.log(orangeBalls.pop());
     
-    frameIndex = 0;
+    //frameIndex = 0;
     
     // Create pacman
     pacman = new Sprite(id[frames[frameIndex]]);
@@ -246,16 +354,6 @@ function init() {
     pacmanLife2 = new Sprite(id["pacman-open.png"]);
     pacmanLife2.anchor.set(0.5);
     pacmanLife2.position.set(2*TILE_SIZE + TILE_SIZE/2, 24*TILE_SIZE + TILE_SIZE/2);
-    
-    // Create font style
-    let style = new PIXI.TextStyle({
-      fontFamily: 'Consolas',
-      fontSize: 28,
-      fontWeight: 'bold',
-      wordWrap: true,
-      wordWrapWidth: 440,
-      fill: "white"
-    });
 
     playerNameText = new PIXI.Text("1UP", style);
     playerScore = 0;
@@ -269,8 +367,21 @@ function init() {
     //scoreNumber.position.set(GAME_WIDTH-2*TILE_SIZE-scoreNumber.width, 32);
     
     gameScene.addChild(pacman, dablik, pistolnik, princezna, lisak, pacmanLife1, pacmanLife2, playerNameText, playerScoreText);
+    // End GameScene
     
-    stage.addChild(menuScene, gameScene);
+    // GameOverScene
+    message = new PIXI.Text(
+      "The End!",
+      {font: "64px Futura", fill: "white"}
+    );
+
+    message.x = GAME_WIDTH/2 - message.width/2;
+    message.y = GAME_HEIGHT/2 - message.height/2;
+
+    gameOverScene.addChild(message);
+    // End GameOverScene
+    
+    stage.addChild(menuScene, gameScene, gameOverScene);
     
     //Move the pacman
     //Capture the keyboard arrow keys, space key
@@ -396,6 +507,7 @@ function gameLoop() {
       frameIndex = 0;
     }
     pacman.texture = PIXI.Texture.fromFrame(frames[frameIndex]);
+    pacmanMenu.texture = PIXI.Texture.fromFrame(frames[frameIndex]);
     frameTime = FRAMERATE;
   }
   
@@ -410,10 +522,19 @@ function gameLoop() {
   stats.end();
 }
 
+function menu() {
+//  menuScene.visible = true;
+//  gameOverScene.visible = true;
+  
+}
+
 // All the game logic goes here
 // This is your game loop, where you can move sprites and add your game logic
 function playing() {
 
+  menuScene.visible = false;
+  gameScene.visible = true;
+  
 //  pacmanOpen.x += pacmanOpen.vx;
 //  pacmanOpen.y += pacmanOpen.vy;
   pacman.x += pacman.vx;
@@ -489,12 +610,24 @@ function playing() {
       if (lifeCounter === 2) {
         gameScene.removeChild(pacmanLife2);
         lifeCounter -= 1;
+        //gameScene;
+        pacman.position.set(9*TILE_SIZE + TILE_SIZE/2, 18*TILE_SIZE + TILE_SIZE/2);
+        pacman.vx = 0;
+        pacman.vy = 0;
+        pacman.rotation = 0;
       }
-      if (lifeCounter === 1) {
+      else if (lifeCounter === 1) {
         gameScene.removeChild(pacmanLife1);
         lifeCounter -= 1;
+        pacman.position.set(9*TILE_SIZE + TILE_SIZE/2, 18*TILE_SIZE + TILE_SIZE/2);
+        pacman.vx = 0;
+        pacman.vy = 0;
+        pacman.rotation = 0;
       }
-      // mizi zivoty naraz, udelat jako s orangeBall
+      else if (lifeCounter === 0) {
+        state = end;
+        message.text = "You lost!";
+      }
     }
     
   });
@@ -510,7 +643,6 @@ function playing() {
     
     if (pacmanHitOrangeBall) {
       pacmanHitOrangeBall = false;
-      gameScene.removeChild(orangeBall);
       let i = orangeBalls.indexOf(orangeBall);
       //console.log(i);
       if (i != -1) {
@@ -520,7 +652,16 @@ function playing() {
         //console.log(playerScore);
         playerScoreText.text = playerScore;
       }
-    }  
+      
+      gameScene.removeChild(orangeBall);
+      console.log(orangeBalls.length);
+      
+      if (orangeBalls.length === 0) {
+        state = end;
+        message.text = "You won";
+      }
+    }
+    
   });
   
   pinkBalls.forEach( (pinkBall) => {
@@ -543,7 +684,8 @@ function playing() {
 
 //All the code that should run at the end of the game goes here
 function end() {
-
+  gameScene.visible = false;
+  gameOverScene.visible = true;
 }
 
 /* Helper functions */
