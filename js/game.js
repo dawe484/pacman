@@ -4,11 +4,10 @@
  * sprite source: ghosts - http://opengameart.org/content/ghosts
  *                box, balls - http://opengameart.org/content/winter-platformer-game-tileset
  */
-
 'use strict';
 /* #GAME SCRIPTS START# */
 
-//Aliases
+// Aliases
 const Container = PIXI.Container,
       autoDetectRenderer = PIXI.autoDetectRenderer,
       loader = PIXI.loader,
@@ -18,7 +17,7 @@ const Container = PIXI.Container,
       Text = PIXI.Text,
       TextStyle = PIXI.TextStyle;
 
-//Define a few globals here
+// Define a few globals here
 const GAME_WIDTH = 608,
       GAME_HEIGHT = 800,
       TILE_SIZE = 32,
@@ -29,54 +28,56 @@ const GAME_WIDTH = 608,
       ORANGEBALL_VALUE = 10,
       PINKBALL_VALUE = 50;
 
+// LEVEL 0 = MENU
 const level0 = [
   "bbbbbbbbbbbb",
   "b..........b",
   "bbbbbbbbbbbb"
 ];
 
+// LEVEL 1
 const level1 = [
-  "bbbbbbbbbbbbbbbbbbb", //19 - original 28
+  "bbbbbbbbbbbbbbbbbbb", // 19 - original 28
   "ba..v...vbv...v..ab",
   "b.bb.bbb.b.bbb.bb.b",
   "b.bb.bbb.b.bbb.bb.b",
-  "bv..v.vav.v.vav..vb",
+  "bv..v.v.v.v.v.v..vb",
   "b.bb.b.bbbbb.b.bb.b",
-  "bv.avbv.vbv.vbv..vb",
+  "bv..vbv.vbv.vbv..vb",
   "bbbb.bbbnbnbbb.bbbb",
-  "nnnb.bwnayanwbabnnn",
+  "nnnb.bwnwywnwb.bnnn",
   "bbbb.bnbb_bbnb.bbbb",
-  "nnnnvnwbnnnbwnvnnnn",
+  "nnnnvnwbnrnbwnvnnnn",
   "bbbb.bnbbbbbnb.bbbb",
-  "nnnbabwnnnnnwb.bnnn",
-  "bbbb.bnbbbbbnbabbbb",
+  "nnnb.bwnnnnnwb.bnnn",
+  "bbbb.bnbbbbbnb.bbbb",
   "bv..v.v.vbv.v.v..vb",
-  "babb.bbb.babbb.bb.b",
+  "b.bb.bbb.b.bbb.bb.b",
   "bvvbv.v.vnv.v.vbvvb",
-  "bb.b.babbbbb.bab.bb",
+  "bb.b.b.bbbbb.b.b.bb",
   "bvv.vbv.vbv.vbv.vvb",
   "b.bbbbbb.b.bbbbbb.b",
   "ba......v.v......ab",
   "bbbbbbbbbbbbbbbbbbb"
-    //25 - original 36 (most of these tiles are not accessible to Pac-Man or the ghosts)
+  // 25 - original 36 (most of these tiles are not accessible to Pac-Man or the ghosts)
 ];
 
 let SPEED = 1;
 
-let renderer, stage, menuScene, gameScene, gameOverScene, helpScene, stats, id, style, styleTitle;
+let renderer, stage, menuScene, gameScene, gameOverScene, helpScene, stats, id, style, styleTitle, textstyle;
 
 let pacmanTitle, pacmanMenu, btnStart, btnStartOver, btnHelp, btnHelpOver, btnMusic, btnMusicOver, 
     btnMusicDisabled, btnMusicOverDisabled, btnSound, btnSoundOver, btnSoundDisabled, 
-    btnSoundOverDisabled, btnClose, btnCloseOver, btnPlay, btnPlayOver, restartGameTooltip;
+    btnSoundOverDisabled, btnClose, btnCloseOver, btnPlay, btnPlayOver, restartGameTooltip, musicGameTooltip,
+    soundGameTooltip, playGameTooltip;
 let left, right, up, down, esc;
 let pacman, pacmanLife1, pacmanLife2, box, pinkBall, orangeBall, iceCube, devil, fox, cowboy, princess,
-    yellowCube, greenCube;
+    yellowCube, greenCube, redCube;
 
-//set the game's current state to 'menu'
-let state = playing;
+// set the game's current state to `menu`
+let state = menu;
 
-let orangeBallsMenu = [], boxes = [], ghosts = [], orangeBalls = [], pinkBalls = [], yellowCubes = [], greenCubes = [];
-//let moveRight = true, moveLeft = true, moveUp = true, moveDown = true;
+let orangeBallsMenu = [], boxes = [], ghosts = [], orangeBalls = [], pinkBalls = [], greenCubes = [];
 let rightPressed = false, leftPressed = false, upPressed = false, downPressed = false;
 let orientationX, pacmanOrientationX;
 let playerName, playerScore, playerNameText, playerScoreText, message, playMessage;
@@ -84,7 +85,7 @@ let playerName, playerScore, playerNameText, playerScoreText, message, playMessa
 const frames = ["pacman-open.png", "pacman-close.png"];
 let frameIndex, frameTime, delta, lasttime, currtime;
 const FRAMERATE = 0.13;
-let lifeCounter = 0;
+let lifeCounter = 2;
 
 let moves = {
   UP: 0,
@@ -106,9 +107,9 @@ function init() {
     resolution: window.devicePixelRatio
   };
 
-  //Create a PIXI stage and renderer
+  // Create a PIXI stage and renderer
   renderer = autoDetectRenderer(GAME_WIDTH, GAME_HEIGHT, rendererOptions);
-  renderer.backgroundColor = 0x000000; //0x202020;
+  renderer.backgroundColor = 0x000000;
 
   if (renderer instanceof PIXI.CanvasRenderer) {
     console.log("Render: Canvas");
@@ -118,27 +119,27 @@ function init() {
     console.log("Device pixel ratio:", window.devicePixelRatio);
   }
 
-  //Add the canvas to the HTML document
+  // Add the canvas to the HTML document
   document.body.appendChild(renderer.view);
 
-  //Create a container object called the 'stage'
+  // Create a container object called the 'stage'
   stage = new Container();
 
   if (window.innerHeight <= GAME_HEIGHT) {
     resize();
   }
   
-  ////ON THE TOP OF OUR SCENE WE PUT A FPS COUNTER FROM MR.DOOB - stats.js ////
+  // ON THE TOP OF OUR SCENE WE PUT A FPS COUNTER FROM MR.DOOB - stats.js ////
   stats = new Stats();
   stats.domElement.style.position = 'absolute';
   stats.domElement.style.top = '0px';
   document.body.appendChild(stats.domElement);
 
-  //Listen for and adapt to changes to the screen size user changing the window or rotating their device
+  // Listen for and adapt to changes to the screen size user changing the window or rotating their device
 //  window.addEventListener("resize", resize);
   
   if (window.devicePixelRatio >= 4) {
-    // loader.add("monster", "monster@2x.json");
+    // loader.add("assets/images/pacmanImages@2x.json");
   } else {
     loader
       .add([
@@ -153,16 +154,14 @@ function init() {
     renderer.resize(Math.ceil(GAME_WIDTH * ratio),Math.ceil(GAME_HEIGHT * ratio));
   }
   
-  //This 'setup' function will run when the image has loaded
-  //Create your game objects here
+  // This `setup` function will run when the image has loaded
   function setup() {
     console.log("All files loaded");
     
-    // Initialize sounds here
-    // music in game menu
+    // Initialize sounds here music in game `menuScene`
     musicPacmanBeginning = new Howl({
       src: ['./assets/audio/pacman_beginning.wav'],
-      //autoplay: true,
+      autoplay: true,
       volume: 0.2,
       loop: true
     });
@@ -202,8 +201,8 @@ function init() {
     gameOverScene.visible = false;
     helpScene.visible = false;
     
-    //Play the sound in 'menuScene'
-    //musicPacmanBeginning.play();
+    // Play the sound in `menuScene`
+    musicPacmanBeginning.play();
     
     id = PIXI.loader.resources["assets/images/pacmanImages.json"].textures;
     
@@ -226,23 +225,31 @@ function init() {
       fill: "#ffcc00"
     });
     
-    // Create 'menuScene'
+    
+    textstyle = new TextStyle({
+      fontSize: 14,
+      fill: "#ffcc00"
+    });
+    
+    // CREATE `menuScene`
     pacmanTitle = new PIXI.Text("PACMAN 2017", styleTitle);
-    //pacmanTitle.anchor.set(0.5);
     pacmanTitle.position.set(GAME_WIDTH/2-pacmanTitle.width/2, 7*TILE_SIZE);
     
     btnStartOver = new Sprite(id["button_over.png"]);
-    //btnStartOver.anchor.set(0.5);
     btnStartOver.position.set(GAME_WIDTH/2-btnStartOver.width/2, GAME_HEIGHT - 7*TILE_SIZE);
     btnStartOver.interactive = true;
     btnStartOver.buttonMode = true;
     btnStartOver.visible = false;
     
     btnStart = new Sprite(id["button.png"]);
-    //btnStart.anchor.set(0.5);
     btnStart.position.set(GAME_WIDTH/2-btnStart.width/2, GAME_HEIGHT - 7*TILE_SIZE);
     btnStart.interactive = true;
     btnStart.buttonMode = true;
+    
+    playGameTooltip = new Text("START GAME", textstyle);
+    playGameTooltip.position.set(btnStart.x+btnStart.width/2-playGameTooltip.width/2, btnStart.y-28);
+    playGameTooltip.visible = false;
+    
     btnStart.mouseover = function onButtonOver() {
       let overStyle = new PIXI.TextStyle({
         fontFamily: 'Consolas',
@@ -255,33 +262,32 @@ function init() {
       btnStartOver.visible = true;
       btnStart.visible = false;
       playMessage.setStyle(overStyle);
+      playGameTooltip.visible = true;
     };
     
     btnStartOver.mouseout = function onButtonOut() {
       btnStartOver.visible = false;
       btnStart.visible = true;
       playMessage.setStyle(style);
+      playGameTooltip.visible = false;
     };
     
     btnStartOver.click = function onButtonClick() {
-      state = playing;
+      state = playing; 
       pacman.vx = 0;
       pacman.vy = 0;
     }
     
     playMessage = new PIXI.Text("PLAY", style);
-    //playMessage.anchor.set(0.5);
     playMessage.position.set(GAME_WIDTH/2-playMessage.width/2, GAME_HEIGHT - 7*TILE_SIZE+10);
 
     btnHelpOver = new Sprite(id["questionMark_over.png"]);
-    //btnHelpOver.anchor.set(0.5);
     btnHelpOver.position.set(GAME_WIDTH - 2*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
     btnHelpOver.interactive = true;
     btnHelpOver.buttonMode = true;
     btnHelpOver.visible = false;
     
     btnHelp = new Sprite(id["questionMark.png"]);
-    //btnHelp.anchor.set(0.5);
     btnHelp.position.set(GAME_WIDTH - 2*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
     btnHelp.interactive = true;
     btnHelp.buttonMode = true;
@@ -301,51 +307,55 @@ function init() {
     }
     
     btnMusicOverDisabled = new Sprite(id["music_over_disabled.png"]);
-    //btnMusicOverDisabled.anchor.set(0.5);
     btnMusicOverDisabled.position.set(GAME_WIDTH - 4*TILE_SIZE-2, GAME_HEIGHT - 3*TILE_SIZE-0.5);
     btnMusicOverDisabled.interactive = true;
     btnMusicOverDisabled.buttonMode = true;
     btnMusicOverDisabled.visible = false;
     
     btnMusicDisabled = new Sprite(id["music_disabled.png"]);
-    //btnMusicDisabled.anchor.set(0.5);
     btnMusicDisabled.position.set(GAME_WIDTH - 4*TILE_SIZE-2, GAME_HEIGHT - 3*TILE_SIZE-0.5);
     btnMusicDisabled.interactive = true;
     btnMusicDisabled.buttonMode = true;
     btnMusicDisabled.visible = false;
     
     btnMusicOver = new Sprite(id["music_over.png"]);
-    //btnMusicOver.anchor.set(0.5);
     btnMusicOver.position.set(GAME_WIDTH - 4*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
     btnMusicOver.interactive = true;
     btnMusicOver.buttonMode = true;
     btnMusicOver.visible = false;
     
+    // music button is image of music note
     btnMusic = new Sprite(id["music.png"]);
-    //btnMusic.anchor.set(0.5);
     btnMusic.position.set(GAME_WIDTH - 4*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
     btnMusic.interactive = true;
     btnMusic.buttonMode = true;
-    //btnMusic.visible = false;
+    
+    musicGameTooltip = new Text("MUTE/UNMUTE MUSIC", textstyle);
+    musicGameTooltip.position.set(btnMusic.x+btnMusic.width/2-musicGameTooltip.width/2, btnMusic.y-28);
+    musicGameTooltip.visible = false;
     
     btnMusic.mouseover = function onButtonOver() {
       btnMusicOver.visible = true;
       btnMusic.visible = false;
+      musicGameTooltip.visible = true;
     };
     
     btnMusicOver.mouseout = function onButtonOut() {
       btnMusicOver.visible = false;
       btnMusic.visible = true;
+      musicGameTooltip.visible = false;
     };
     
     btnMusicDisabled.mouseover = function onButtonOverDisable() {
       btnMusicOverDisabled.visible = true;
       btnMusicDisabled.visible = false;
+      musicGameTooltip.visible = true;
     };
     
     btnMusicOverDisabled.mouseout = function onButtonOutDisable() {
       btnMusicOverDisabled.visible = false;
       btnMusicDisabled.visible = true;
+      musicGameTooltip.visible = false;
     };
     
     btnMusicOver.click = function onButtonClick() {
@@ -365,14 +375,12 @@ function init() {
     };
     
     btnSoundOverDisabled = new Sprite(id["sound_over_disabled.png"]);
-    //btnSoundOverDisabled.anchor.set(0.5);
     btnSoundOverDisabled.position.set(GAME_WIDTH - 6*TILE_SIZE-2.5, GAME_HEIGHT - 3*TILE_SIZE-1);
     btnSoundOverDisabled.interactive = true;
     btnSoundOverDisabled.buttonMode = true;
     btnSoundOverDisabled.visible = false;
     
     btnSoundDisabled = new Sprite(id["sound_disabled.png"]);
-    //btnSoundDisabled.anchor.set(0.5);
     btnSoundDisabled.position.set(GAME_WIDTH - 6*TILE_SIZE-2.5, GAME_HEIGHT - 3*TILE_SIZE-1);
     btnSoundDisabled.interactive = true;
     btnSoundDisabled.buttonMode = true;
@@ -389,59 +397,63 @@ function init() {
     };
     
     btnSoundOver = new Sprite(id["sound_over.png"]);
-    //btnSoundOver.anchor.set(0.5);
     btnSoundOver.position.set(GAME_WIDTH - 6*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
     btnSoundOver.interactive = true;
     btnSoundOver.buttonMode = true;
     btnSoundOver.visible = false;
     
+    // repro button is image of sound effects
     btnSound = new Sprite(id["sound.png"]);
-    //btnSound.anchor.set(0.5);
     btnSound.position.set(GAME_WIDTH - 6*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
     btnSound.interactive = true;
     btnSound.buttonMode = true;
     
+    soundGameTooltip = new Text("MUTE SOUND EFFECTS", textstyle);
+    soundGameTooltip.position.set(btnSound.x+btnSound.width/2-soundGameTooltip.width/2, btnSound.y-28);
+    soundGameTooltip.visible = false;
+    
     btnSound.mouseover = function onButtonOver() {
       btnSoundOver.visible = true;
       btnSound.visible = false;
+      soundGameTooltip.visible = true;
     };
     
     btnSoundOver.mouseout = function onButtonOut() {
       btnSoundOver.visible = false;
       btnSound.visible = true;
+      soundGameTooltip.visible = false;
     };
     
     btnSoundOver.click = function onButtonClick() {
-      //if (musicPacmanBeginning.playing()) {
-        //musicPacmanBeginning.stop();
-        btnSoundOver.visible = false;
-        btnSoundOverDisabled.visible = true;
-      //}
+//      if (musicPacmanBeginning.playing()) {
+//        musicPacmanBeginning.stop();
+      btnSoundOver.visible = false;
+      btnSoundOverDisabled.visible = true;
+      soundGameTooltip.visible = true;
+//      }
     };
     
     btnSoundOverDisabled.click = function onButtonClick() {
-      //if (musicPacmanBeginning.playing() == false) {
-        //musicPacmanBeginning.play();
-        btnSoundOverDisabled.visible = false;
-        btnSoundOver.visible = true;
-      //}
+//      if (musicPacmanBeginning.playing() == false) {
+//        musicPacmanBeginning.play();
+      btnSoundOverDisabled.visible = false;
+      btnSoundOver.visible = true;
+      soundGameTooltip.visible = false;
+//      }
     };
     
     for (let i = 0; i < level0.length; i++) {
       for (let c = 0; c < level0[i].length; c++) {
         if (level0[i][c] == 'b') {
           box = new Sprite(id["krabice.png"]);
-          //box.anchor.set(0.5);
           box.position.x = c * TILE_SIZE + 4*TILE_SIZE-TILE_SIZE/2;
           box.position.y = i * TILE_SIZE + 10*TILE_SIZE+TILE_SIZE/2;
           menuScene.addChild(box);
-          //console.log(box.position.x, box.position.y)
         }
         if (level0[i][c] == '.') {
           orangeBall = new Sprite(id["orange-ball.png"]);
           orangeBall.position.x = c * TILE_SIZE + 4*TILE_SIZE-orangeBall.width/2;
           orangeBall.position.y = i * TILE_SIZE + 11*TILE_SIZE-orangeBall.width/2;
-          //orangeBall.anchor.set(0.5);
           orangeBallsMenu.push(orangeBall);
           menuScene.addChild(orangeBall);
         }
@@ -450,32 +462,28 @@ function init() {
     
     frameIndex = 0;
     
-    // Create pacman
+    // Create pacman in `menuScene`
     pacmanMenu = new Sprite(id[frames[frameIndex]]);
     frameTime = FRAMERATE;
     pacmanMenu.anchor.set(0.5);
-    pacmanMenu.position.set(5*TILE_SIZE, 12*TILE_SIZE); //x+2, y+3
+    pacmanMenu.position.set(5*TILE_SIZE, 12*TILE_SIZE);
     pacmanMenu.vx = SPEED;
-    //pacmanMenu.vy = 0;
     pacmanMenu.scale.set(1)
-    //pacmanOrientationX = pacmanMenu.scale.x = 1;
     
     menuScene.addChild(pacmanTitle, btnStart, btnStartOver, playMessage, btnHelp, btnHelpOver, btnMusic, btnMusicOver, 
                        btnMusicDisabled, btnMusicOverDisabled, btnSound, btnSoundOver, btnSoundDisabled, 
-                       btnSoundOverDisabled, pacmanMenu);
-    //End 'menuScene'
+                       btnSoundOverDisabled, pacmanMenu, musicGameTooltip, soundGameTooltip, playGameTooltip);
+    // END `menuScene`
     
-    // Create 'helpScene'
+    // CREATE `helpScene`
     btnCloseOver = new Sprite(id["close_over.png"]);
-    //btnCloseOver.anchor.set(0.5);
-    btnCloseOver.position.set(GAME_WIDTH - 2*TILE_SIZE, 3*TILE_SIZE);
+    btnCloseOver.position.set(GAME_WIDTH - 3*TILE_SIZE, 2*TILE_SIZE);
     btnCloseOver.interactive = true;
     btnCloseOver.buttonMode = true;
     btnCloseOver.visible = false;
     
     btnClose = new Sprite(id["close.png"]);
-    //btnClose.anchor.set(0.5);
-    btnClose.position.set(GAME_WIDTH - 2*TILE_SIZE, 3*TILE_SIZE);
+    btnClose.position.set(GAME_WIDTH - 3*TILE_SIZE, 2*TILE_SIZE);
     btnClose.interactive = true;
     btnClose.buttonMode = true;
     btnClose.mouseover = function onButtonOver() {
@@ -492,25 +500,52 @@ function init() {
       state = menu;
     }
     
-    let helpTitle = new PIXI.Text("School project to subject 'Innovation Course for the IT Specialists'", style);
+    let helpTitleStyle = new PIXI.TextStyle({
+      fontFamily: 'Consolas',
+      fontSize: 24,
+      fontWeight: 'bold',
+      wordWrap: true,
+      wordWrapWidth: 440,
+      fill: "#ffcc00"
+    });
+    
+    let helpAuthorStyle = new PIXI.TextStyle({
+      fontFamily: 'Consolas',
+      fontSize: 22,
+      fontWeight: 'bold',
+      wordWrap: true,
+      wordWrapWidth: 440,
+      fill: "#fff"
+    });
+    
+    let helpStyle = new PIXI.TextStyle({
+      fontFamily: 'Consolas',
+      fontSize: 18,
+      fontWeight: 'bold',
+      wordWrap: true,
+      wordWrapWidth: 400,
+      fill: "#fff"
+    });
+    
+    let helpTitle = new PIXI.Text("School project to subject 'Innovation Course for the IT Specialists'", helpTitleStyle);
     helpTitle.position.set(2*TILE_SIZE, 4*TILE_SIZE);
     
-    let helpAuthor = new PIXI.Text("Author: David Krénar", style);
-    helpAuthor.position.set(2*TILE_SIZE, 8*TILE_SIZE);
+    let helpAuthor = new PIXI.Text("Author: David Krénar", helpAuthorStyle);
+    helpAuthor.position.set(2*TILE_SIZE, 8*TILE_SIZE-TILE_SIZE/2+4);
     
-    let helpSources = new PIXI.Text("Sources:", style);
+    let helpSources = new PIXI.Text("Audio and image sources:", helpTitleStyle);
     helpSources.position.set(2*TILE_SIZE, 10*TILE_SIZE);
     
-    let helpSourcesSound = new PIXI.Text("Sound: http://www.classicgaming.cc/\nclassics/pac-man/sounds", style);
-    helpSourcesSound.position.set(3*TILE_SIZE, 11*TILE_SIZE);
+    let helpSourcesSound = new PIXI.Text("Sound:\nhttp://www.classicgaming.cc/classics/pac-man/sounds", helpStyle);
+    helpSourcesSound.position.set(2*TILE_SIZE, 11*TILE_SIZE);
     
-    let helpSourcesImage = new PIXI.Text("Image: http://opengameart.org/content/\nghosts\nhttp://opengameart.org/content/\nwinter-platformer-game-tileset", style);
-    helpSourcesImage.position.set(3*TILE_SIZE, 14*TILE_SIZE);
+    let helpSourcesImage = new PIXI.Text("Image:\nhttp://opengameart.org/content/ghosts\nhttp://opengameart.org/content/winter-platformer-\ngame-tileset", helpStyle);
+    helpSourcesImage.position.set(2*TILE_SIZE, 13*TILE_SIZE);
     
     helpScene.addChild(btnClose, btnCloseOver, helpTitle, helpAuthor, helpSources, helpSourcesSound, helpSourcesImage);
-    // End 'helpScene'
+    // END `helpScene`
     
-    // Create 'gameScene'
+    // CREATE `gameScene`
     for (let i = 0; i < level1.length; i++) {
       for (let c = 0; c < level1[i].length; c++) {
         if (level1[i][c] == 'b') {
@@ -536,7 +571,6 @@ function init() {
           yellowCube.position.x = c * TILE_SIZE;
           yellowCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
           gameScene.addChild(yellowCube);
-          yellowCubes.push(yellowCube);
         }
         if (level1[i][c] == 'x') {
           yellowCube = new Sprite(id["yellow_cube.png"]);
@@ -578,15 +612,20 @@ function init() {
           iceCube.position.x = c * TILE_SIZE;
           iceCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
           gameScene.addChild(iceCube);
-          boxes.push(iceCube);
           iceCube.visible = false;
+        }
+        if (level1[i][c] == 'r') {
+          redCube = new Sprite(id["yellow_cube.png"]);
+          redCube.position.x = c * TILE_SIZE;
+          redCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+          gameScene.addChild(redCube);
         }
       }
     }
         
     frameIndex = 0;
     
-    // Create pacman
+    // Create pacman in `gameScene`
     pacman = new Sprite(id[frames[frameIndex]]);
     frameTime = FRAMERATE;
     pacman.position.set(9*TILE_SIZE+3, 18*TILE_SIZE+3);
@@ -594,9 +633,8 @@ function init() {
     pacman.vy = 0;
     pacman.scale.set(0.8);
     pacman.eatGhost = false;
-    //pacmanOrientationX = pacman.scale.x = 0.8;
     
-    // Create the red ghost called 'devil'
+    // Create the red ghost called `devil`
     devil = new Sprite(id["dablik.png"]);
     devil.position.set(9*TILE_SIZE, 10*TILE_SIZE);
     devil.vx = -GHOST_SPEED;
@@ -604,23 +642,23 @@ function init() {
     devil.path = moves.LEFT;
     ghosts.push(devil);
     
-    // Create the blue ghost called 'princess'
+    // Create the blue ghost called `princess`
     princess = new Sprite(id["princezna.png"]);
     princess.position.set(9*TILE_SIZE, 12*TILE_SIZE);
-    princess.vx = -GHOST_SPEED;
-    princess.vy = 0;
-    princess.path = moves.LEFT;
+    princess.vx = 0;
+    princess.vy = -GHOST_SPEED;
+    princess.path = moves.UP;
     ghosts.push(princess);
     
-    // Create the blue ghost called 'cowboy'
+    // Create the blue ghost called `cowboy`
     cowboy = new Sprite(id["pistolnik.png"]);
     cowboy.position.set(8*TILE_SIZE, 12*TILE_SIZE);
-    cowboy.vx = -GHOST_SPEED;
+    cowboy.vx = GHOST_SPEED;
     cowboy.vy = 0;
-    cowboy.path = moves.LEFT;
+    cowboy.path = moves.RIGHT;
     ghosts.push(cowboy);
     
-    // Create the blue ghost called 'fox'
+    // Create the blue ghost called `fox`
     fox = new Sprite(id["lisak.png"]);
     fox.position.set(10*TILE_SIZE, 12*TILE_SIZE);
     fox.vx = -GHOST_SPEED;
@@ -641,25 +679,15 @@ function init() {
     playerNameText = new PIXI.Text("1UP", style);
     playerScore = 0;
     playerScoreText = new PIXI.Text(playerScore.toString(), style);
-    //let score = new PIXI.Text("SCORE", style);
-    //let scoreNumber = new PIXI.Text("0000", style);
 
     playerNameText.position.set(2*TILE_SIZE, 6);
     playerScoreText.position.set(2*TILE_SIZE, 32);
-    //score.position.set(GAME_WIDTH-2*TILE_SIZE-score.width, 6);
-    //scoreNumber.position.set(GAME_WIDTH-2*TILE_SIZE-scoreNumber.width, 32);
     
-    gameScene.addChild(pacman, iceCube, devil, princess, cowboy, fox, pacmanLife1, pacmanLife2, playerNameText, playerScoreText);
-    // End 'gameScene'
+    gameScene.addChild(pacman, devil, princess, cowboy, fox, pacmanLife1, pacmanLife2, playerNameText, playerScoreText);
+    // END `gameScene`
     
-    // Create 'gameOverScene'
+    // CREATE `gameOverScene`
     message = new Text("The End!", {font: "64px Futura", fill: "#ffcc00"});
-
-    let textstyle = new TextStyle({
-//      fontFamily: 'MoolBoran',
-      fontSize: 16,
-      fill: "#ffcc00"
-    });
     
     message.x = GAME_WIDTH/2 - message.width/2;
     message.y = GAME_HEIGHT/2 - message.height/2;
@@ -696,13 +724,13 @@ function init() {
     }
     
     gameOverScene.addChild(message, btnPlay, btnPlayOver, restartGameTooltip);
-    // End 'gameOverScene'
+    // END `gameOverScene`
     
     // STAGE
     stage.addChild(menuScene, gameScene, gameOverScene, helpScene);
     
-    //Move the pacman
-    //Capture the keyboard arrow keys, space key
+    // Move the pacman
+    // Capture the keyboard arrow keys, escape key - pause
     left = keyboard(37),
     up = keyboard(38),
     right = keyboard(39),
@@ -717,20 +745,6 @@ function init() {
       leftPressed = false;
       upPressed = false;
       downPressed = false;
-//      if (rightPressed) {
-//        leftPressed = false;
-////        if (pacmanOrientationX < 0) {
-////          pacmanOrientationX = pacman.scale.x *= -1;
-////        }
-//      }
-//      if (upPressed && rightPressed) {
-//        upPressed = false;
-//        //pacman.rotation = 0;
-//      }
-//      if (downPressed && rightPressed) {
-//        downPressed = false;
-//        //pacman.rotation = 0;
-//      }
     }
 
     // Left arrow key `press` method
@@ -782,7 +796,7 @@ function init() {
   }
 }
 
-// Runs the current game 'state' in a loop and render the sprites
+// Runs the current game `state` in a loop and render the sprites
 function gameLoop() {
 
   stats.begin();
@@ -807,7 +821,7 @@ function gameLoop() {
     frameTime = FRAMERATE;
   }
   
-  // Render the stage - Tell the 'renderer' to render the 'stage'
+  // Render the stage - Tell the `renderer` to render the `stage`
   renderer.render(stage);
 
   // Loop this function 60 times per second
@@ -818,7 +832,7 @@ function gameLoop() {
   stats.end();
 }
 
-// Logic in 'menuScene'
+// Logic in `menuScene`
 function menu() {
   helpScene.visible = false;
   gameOverScene.visible = false;
@@ -834,16 +848,14 @@ function menu() {
   if (pacmanHitBox === "left" || pacmanHitBox === "right") {
     pacmanMenu.vx *= -SPEED;
     pacmanMenu.scale.x *= -1;
-//    pacmanMenu.scale.x = -1;
     orangeBallsMenu.forEach( (orangeBall) => {
       orangeBall.visible = true;
     });
-//    orangeBall.visible = true;
   }
   
   pacmanMenu.x += pacmanMenu.vx;
   
-  //Check for a collision between the balls and the pacman
+  // Check for a collision between the balls and the pacman
   orangeBallsMenu.forEach( (orangeBall) => {
     
     if (hitTestRectangle(pacmanMenu, orangeBall)) {
@@ -857,7 +869,7 @@ function menu() {
   });
 }
 
-// Logic in 'helpScene'
+// Logic in `helpScene`
 function help() {
   menuScene.visible = false;
   helpScene.visible = true;
@@ -865,7 +877,7 @@ function help() {
 
 // All the game logic goes here
 // This is your game loop, where you can move sprites and add your game logic
-// Logic in 'gameScene'
+// Logic in `gameScene`
 function playing() {
 
   musicPacmanBeginning.stop();
@@ -894,13 +906,13 @@ function playing() {
   let ghostHitBox = false;
   
   
-  //Move the ghosts
+  // Move the ghosts
   moveGhost(devil);
-  
+ 
   if (playerScore >= 300) {
     moveGhost(princess);
   }
-  
+    
   if (playerScore >= 600) {
     moveGhost(cowboy);
   }
@@ -909,24 +921,13 @@ function playing() {
     moveGhost(fox);
   }
   
-//  devil.x += devil.vx;
-//  devil.y += devil.vy;
-//  
-//  if (devil.x === -26 && devil.y === 384) {
-//    devil.position.set(GAME_WIDTH+10, devil.y);
-//  } else if (devil.x === GAME_WIDTH+10 && devil.y === 384) {
-//    devil.position.set(-26, devil.y)
-//  
-//  greenCubes.forEach( (greenCube) => {
-//    if (hitObjects(devil, greenCube)) {}
-//  });
-  
   if (hitTestRectangle(pacman, iceCube)) {
     pacman.vx = 0;
     pacman.vy = 0;
+    pacman.x -= OFFSET;
   }
   
-  //Check for a collision between the pacman and the boxes
+  // Check for a collision between the pacman and the boxes
   boxes.forEach( (box) => {
     
     if (hitTestRectangle(pacman, box)) {
@@ -938,7 +939,7 @@ function playing() {
       pacman.vx = 0;
       pacman.vy = 0;
       
-      //pacman control
+      // pacman control
       if (rightPressed) {
         rightPressed = false;
         pacman.x -= PACMAN_OFFSET;
@@ -961,7 +962,7 @@ function playing() {
     }
   });
   
-  //Check for a collision between the ghosts and the boxes
+  // Check for a collision between the ghosts and the boxes
   boxes.forEach( (box) => {
     
     ghosts.forEach( (ghost) => {
@@ -972,7 +973,6 @@ function playing() {
 
       if (ghostHitBox) {
         ghostHitBox = false;
-  //      console.log(path, 'hit box')
         ghost.vx = 0;
         ghost.vy = 0;
 
@@ -992,12 +992,10 @@ function playing() {
           ghost.x += OFFSET
         }
       }
-      
     });
-    
   });
   
-  //Check for a collision between the ghost and the pacman
+  // Check for a collision between the ghost and the pacman
   ghosts.forEach( (ghost) => {
     if (hitTestRectangle(pacman, ghost)) {
       pacmanHitGhost = true;
@@ -1016,7 +1014,7 @@ function playing() {
         playerScore += GHOST_VALUE;
         playerScoreText.text = playerScore;
         ghost.position.set();
-//        console.log(ghosts.indexOf(ghost));
+        
         for (let i = 0; i < ghosts.length; i++) {
           if (ghosts[i] == 0) {
             ghost.setTexture(id["dablik.png"]);
@@ -1028,6 +1026,7 @@ function playing() {
             ghost.setTexture(id["lisak.png"]);
           }
         }
+        
         ghost.position.set(9*TILE_SIZE, 10*TILE_SIZE);
         ghost.path = moves.LEFT;
         ghost.vx = 0;
@@ -1037,7 +1036,6 @@ function playing() {
           ghost.vx = -GHOST_SPEED;
           ghost.vy = 0;
         }, (4 * 1000));
-        
       } else {
         
         if (!btnSoundDisabled.visible) {
@@ -1064,14 +1062,11 @@ function playing() {
           state = end;
           message.text = "You lost!";
         }
-        
       }
-      
     }
-    
   });
     
-  //Check for a collision between the balls and the pacman
+  // Check for a collision between the balls and the pacman
   orangeBalls.forEach( (orangeBall) => {
     
     if (hitTestRectangle(pacman, orangeBall)) {
@@ -1096,10 +1091,9 @@ function playing() {
 
       if (orangeBalls.length === 0 && pinkBalls.length === 0) {
         state = end;
-        message.text = "You won";
+        message.text = "You won!";
       }
     }
-    
   });
   
   pinkBalls.forEach( (pinkBall) => {
@@ -1117,7 +1111,6 @@ function playing() {
         princess.setTexture(id["princezna_eat.png"]);
         cowboy.setTexture(id["pistolnik_eat.png"]);
         fox.setTexture(id["lisak_eat.png"]);
-//        SPEED = 2;
         // pacman eat ghost
         pacman.eatGhost = true;
         
@@ -1126,18 +1119,26 @@ function playing() {
           princess.setTexture(id["princezna.png"]);
           cowboy.setTexture(id["pistolnik.png"]);
           fox.setTexture(id["lisak.png"]);
-//          SPEED = 1;
           // pacman dont eat ghost
           pacman.eatGhost = false;
         });
       } else {
         soundPacmanIntermission.play();
         soundPacmanIntermission.volume(0);
-//        devilIntermission.visible = true;
-//        devil.visible = false;
+        devil.setTexture(id["dablik_eat.png"]);
+        princess.setTexture(id["princezna_eat.png"]);
+        cowboy.setTexture(id["pistolnik_eat.png"]);
+        fox.setTexture(id["lisak_eat.png"]);
+        // pacman eat ghost
+        pacman.eatGhost = true;
+        
         soundPacmanIntermission.on('end', () => {
-//          devilIntermission.visible = false;
-//          devil.visible = true;
+          evil.setTexture(id["dablik.png"]);
+          princess.setTexture(id["princezna.png"]);
+          cowboy.setTexture(id["pistolnik.png"]);
+          fox.setTexture(id["lisak.png"]);
+          // pacman dont eat ghost
+          pacman.eatGhost = false;
         });
       }
       
@@ -1152,33 +1153,28 @@ function playing() {
 
       if (pinkBalls.length === 0 && orangeBalls.length === 0) {
         state = end;
-        message.text = "You won";
+        message.text = "You won!";
       }
-      
     }
   });
   
-  //Decide whether the game has been won or lost
-  
-  //Change the game `state` to `end` when the game is finsihed
+  // Decide whether the game has been won or lost
+  // Change the game 'state' to 'end' when the game is finsihed
   
 }
 
-//All the code that should run at the end of the game goes here
+// All the code that should run at the end of the game goes here
 function end() {
+  menuScene.visible = false;
+  musicPacmanBeginning.stop();
+  soundPacmanIntermission.stop();
   gameScene.visible = false;
   gameOverScene.visible = true;
 }
 
 /* Helper functions */
 
-function getRandomDirection() {
-  let direction = Math.floor((Math.random() * 2) + 1);
-  console.log(direction);
-  return direction;
-}
-
-//The `keyboard` helper function
+// The `keyboard` helper function
 function keyboard(keyCode) {
   var key = {};
   key.code = keyCode;
@@ -1187,7 +1183,7 @@ function keyboard(keyCode) {
   key.press = undefined;
   key.release = undefined;
   
-  //The `downHandler`
+  // The `downHandler`
   key.downHandler = function(event) {
     if (event.keyCode === key.code) {
       if (key.isUp && key.press) key.press();
@@ -1196,7 +1192,8 @@ function keyboard(keyCode) {
     }
     event.preventDefault();
   };
-  //The `upHandler`
+  
+  // The `upHandler`
   key.upHandler = function(event) {
     if (event.keyCode === key.code) {
       if (key.isDown && key.release) key.release();
@@ -1206,56 +1203,57 @@ function keyboard(keyCode) {
     event.preventDefault();
   };
 
-  //Attach event listeners
+  // Attach event listeners
   window.addEventListener(
     "keydown", key.downHandler.bind(key), false
   );
+  
   window.addEventListener(
     "keyup", key.upHandler.bind(key), false
   );
   return key;
 }
 
-//The 'contain' function
+// The `contain` function
 function contain(sprite, container) {
 
   let collision = undefined;
 
-  //Left
+  // Left
   if (sprite.x < container.x) {
     sprite.x = container.x;
     collision = "left";
   }
 
-  //Top
+  // Top
   if (sprite.y < container.y) {
     sprite.y = container.y;
     collision = "top";
   }
 
-  //Right
+  // Right
   if (sprite.x + sprite.width > container.width) {
     sprite.x = container.width - sprite.width;
     collision = "right";
   }
 
-  //Bottom
+  // Bottom
   if (sprite.y + sprite.height > container.height) {
     sprite.y = container.height - sprite.height;
     collision = "bottom";
   }
 
-  //Return the 'collision' value
+  // Return the `collision` value
   return collision;
 }
 
-//The 'hitTestRectangle' function
+// The 'hitTestRectangle' function
 function hitTestRectangle(r1, r2) {
 
-  //Define the variables we'll need to calculate
-  var hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
+  // Define the variables we'll need to calculate
+  let hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
 
-  //hit will determine whether there's a collision
+  // hit will determine whether there's a collision
   hit = false;
 
   //Find the center points of each sprite
@@ -1264,64 +1262,55 @@ function hitTestRectangle(r1, r2) {
   r2.centerX = r2.x + r2.width / 2;
   r2.centerY = r2.y + r2.height / 2;
 
-  //Find the half-widths and half-heights of each sprite
+  // Find the half-widths and half-heights of each sprite
   r1.halfWidth = r1.width / 2;
   r1.halfHeight = r1.height / 2;
   r2.halfWidth = r2.width / 2;
   r2.halfHeight = r2.height / 2;
 
-  //Calculate the distance vector between the sprites
+  // Calculate the distance vector between the sprites
   vx = r1.centerX - r2.centerX;
   vy = r1.centerY - r2.centerY;
 
-  //Figure out the combined half-widths and half-heights
+  // Figure out the combined half-widths and half-heights
   combinedHalfWidths = r1.halfWidth + r2.halfWidth;
   combinedHalfHeights = r1.halfHeight + r2.halfHeight;
 
-  //Check for a collision on the x axis
+  // Check for a collision on the x axis
   if (Math.abs(vx) < combinedHalfWidths) {
 
-    //A collision might be occuring. Check for a collision on the y axis
+    // A collision might be occuring. Check for a collision on the y axis
     if (Math.abs(vy) < combinedHalfHeights) {
 
-      //There's definitely a collision happening
+      // There's definitely a collision happening
       hit = true;
     } else {
 
-      //There's no collision on the y axis
+      // There's no collision on the y axis
       hit = false;
     }
   } else {
 
-    //There's no collision on the x axis
+    // There's no collision on the x axis
     hit = false;
   }
 
-  //`hit` will be either 'true' or 'false'
+  // `hit` will be either `true` or `false`
   return hit;
 };
 
-//The 'hitObjects' function
-function hitObjects(r1, r2) {
+// The `hitGreenCube` function
+function hitGreenCube(r1, r2) {
 
-  //Define the variables we'll need to calculate
-  var hit, vx, vy;
-
-  //hit will determine whether there's a collision
+  let hit, vx, vy;
   hit = false;
 
-  //Check for a collision on the x axis
-  if ((r1.x) == r2.x) { // -OFFSET
-
-    //A collision might be occuring. Check for a collision on the y axis
+  if ((r1.x) == r2.x) {
     if ((r1.y) == r2.y) {
-
-      //There's definitely a collision happening
       hit = true;
       
       if (hit) {
         direction = Math.floor((Math.random() * 4) + 1);
-        //console.log(direction)
         if (direction == 1) {
           r1.path = moves.UP
           r1.vx = 0
@@ -1340,22 +1329,16 @@ function hitObjects(r1, r2) {
           r1.vy = 0
         }
       }
-      
     } else {
-
-      //There's no collision on the y axis
       hit = false;
     }
   } else {
-
-    //There's no collision on the x axis
     hit = false;
   }
-
-  //`hit` will be either 'true' or 'false'
   return hit;
 };
-  
+
+// The `moveGhost` function
 function moveGhost(ghostName) {
   
   ghostName.x += ghostName.vx;
@@ -1368,8 +1351,61 @@ function moveGhost(ghostName) {
   }
   
   greenCubes.forEach( (greenCube) => {
-    if (hitObjects(ghostName, greenCube)) {}
+    if (hitGreenCube(ghostName, greenCube)) {}
   });
   
+  if (hitYellowCube(ghostName, yellowCube)) {}
+  
+  if (hitRedCube(ghostName, redCube)) {}
+  
 };
+
+// The `hitYellowCube` function
+function hitYellowCube(r1, r2) {
+  var hit, vx, vy;
+  hit = false;
+  if ((r1.x) == r2.x) {
+    if ((r1.y) == r2.y) {
+      hit = true;
+      if (hit) {
+        direction = 4;
+        if (direction == 4) {
+          r1.path = moves.LEFT
+          r1.vx = -GHOST_SPEED
+          r1.vy = 0
+        }
+      }
+    } else {
+      hit = false;
+    }
+  } else {
+    hit = false;
+  }
+  return hit;
+};
+
+// The `hitRedCube` function
+function hitRedCube(r1, r2) {
+  var hit, vx, vy;
+  hit = false;
+  if ((r1.x) == r2.x) {
+    if ((r1.y) == r2.y) {
+      hit = true;
+      if (hit) {
+        direction = 1;
+        if (direction == 1) {
+          r1.path = moves.UP
+          r1.vx = 0
+          r1.vy = -GHOST_SPEED
+        }
+      }
+    } else {
+      hit = false;
+    }
+  } else {
+    hit = false;
+  }
+  return hit;
+};
+
 /* #GAME SCRIPTS END# */
