@@ -23,10 +23,13 @@ const GAME_WIDTH = 608,
       TILE_SIZE = 32,
       OFFSET = 1,
       PACMAN_OFFSET = 2,
+      SPEED = 1,
       GHOST_SPEED = 1,
       GHOST_VALUE = 200,
       ORANGEBALL_VALUE = 10,
-      PINKBALL_VALUE = 50;
+      PINKBALL_VALUE = 50,
+      PACMAN_START_X = 9*TILE_SIZE+5,
+      PACMAN_START_Y = 18*TILE_SIZE+5;
 
 // LEVEL 0 = MENU
 const level0 = [
@@ -62,27 +65,93 @@ const level1 = [
   // 25 - original 36 (most of these tiles are not accessible to Pac-Man or the ghosts)
 ];
 
-let SPEED = 1;
+//const level1 = [
+//  "bbbbbbbbbbbbbbbbbbb", // 19 - original 28
+//  "bc--x---xbx---x--cb",
+//  "b-bb-bbb-b-bbb-bb-b",
+//  "b-bb-bbb-b-bbb-bb-b",
+//  "bx--x-x-x-x-x-x--xb",
+//  "b-bb-b-bbbbb-b-bb-b",
+//  "bx--xbx-xbx-xbx--xb",
+//  "bbbb-bbbnbnbbb-bbbb",
+//  "nnnb-bwnwywnwb-bnnn",
+//  "bbbb-bnbb_bbnb-bbbb",
+//  "nnnnxnwbnrnbwnxnnnn",
+//  "bbbb-bnbbbbbnb-bbbb",
+//  "nnnb-bwnnnnnwb-bnnn",
+//  "bbbb-bnbbbbbnb-bbbb",
+//  "bx--x-x-xbx-x-x--xb",
+//  "b-bb-bbb-b-bbb-bb-b",
+//  "bxxbx-x-xnx-x-xbxxb",
+//  "bb-b-b-bbbbb-b.b.bb",
+//  "bxx-xbx-xbx-xbx.xxb",
+//  "b.bbbbbb.b-bbbbbb.b",
+//  "bc......v.v......cb",
+//  "bbbbbbbbbbbbbbbbbbb"
+//  // 25 - original 36 (most of these tiles are not accessible to Pac-Man or the ghosts)
+//];
+//
+//// LEVEL 2
+//const level2 = [
+//  "bbbbbbbbbbbbbbbbbbb",
+//  "bv..v.vbv.vbv.v..vb",
+//  "b.bb.b.b.b.b.b.bb.b",
+//  "b.bb.b.b.b.b.b.bb.b",
+//  "bv.avbv.vbv.vbva.vb",
+//  "b.bb.bbb.b.bbb.bb.b",
+//  "b.bvv.v.vbv.v.vvb.b",
+//  "b.b.bbnbbbbbnbb.b.b",
+//  "nv.vvnwnwywnwnvv.vn",
+//  "b.bb.bnbb_bbnb.bb.b",
+//  "bv..vnwbnrnbwnv..vb",
+//  "b.bb.bnbbbbbnb.bb.b", // remove scene, create new
+//  "bvvb.bwnnnnnwb.bvvb",
+//  "bb.b.bnbbbbbnb.b.bb",
+//  "nvvbv.v.vbv.v.vbvvn",
+//  "b.bb.bbb.b.bbb.bb.b",
+//  "bv.vvbv.vnv.vbvv.vb",
+//  "b.b.bb.b.b.b.bb.b.b",
+//  "b.bva.vbv.vbv.avb.b",
+//  "b.bbbb.bbbbb.bbbb.b",
+//  "bv....v.....v....vb",
+//  "bbbbbbbbbbbbbbbbbbb"
+//];
 
-let renderer, stage, menuScene, gameScene, gameOverScene, helpScene, stats, id, style, styleTitle, textstyle;
+let activeLevel = 1;
 
-let pacmanTitle, pacmanMenu, btnStart, btnStartOver, btnHelp, btnHelpOver, btnMusic, btnMusicOver, 
-    btnMusicDisabled, btnMusicOverDisabled, btnSound, btnSoundOver, btnSoundDisabled, 
-    btnSoundOverDisabled, btnClose, btnCloseOver, btnPlay, btnPlayOver, restartGameTooltip, musicGameTooltip,
-    soundGameTooltip, playGameTooltip;
-let left, right, up, down, esc;
-let pacman, pacmanLife1, pacmanLife2, box, pinkBall, orangeBall, iceCube, devil, fox, cowboy, princess,
+let renderer, stage, menuScene, gameSceneLevel1, gameOverScene, helpScene, settingsScene, pauseScene,
+    stats, id, style, styleTitle, textstyle;
+
+let pacmanTitle, pacmanMenu, btnStart, btnStartOver, btnSettings, btnSettingsOver, btnHighscore, btnHighscoreOver, 
+    btnHelp, btnHelpOver, btnMusic, btnMusicOver, btnMusicDisabled, btnMusicOverDisabled, btnSound, 
+    btnSoundOver, btnSoundDisabled, btnSoundOverDisabled, btnCloseHelp, btnCloseHelpOver, btnPlay, btnPlayOver, 
+    restartGameTooltip, musicGameTooltip, soundGameTooltip, playGameTooltip, settingsGameTooltip, highscoreGameTooltip, 
+    helpGameTooltip, btnCloseSettings, btnCloseSettingsOver;
+let left, right, up, down, esc, enter;
+let pacman, pacmanLevel1, pacmanLife1, pacmanLife2, pacmanLevel1Life1, pacmanLevel1Life2,
+    box, pinkBall, orangeBall, iceCube, devil, fox, cowboy, princess, devilLevel1, princessLevel1, cowboyLevel1, foxLevel1, 
     yellowCube, greenCube, redCube;
 
 // set the game's current state to `menu`
 let state = menu;
 
 let orangeBallsMenu = [], boxes = [], ghosts = [], orangeBalls = [], pinkBalls = [], greenCubes = [];
-let rightPressed = false, leftPressed = false, upPressed = false, downPressed = false;
-let orientationX, pacmanOrientationX;
+let rightPressed = false, leftPressed = false, upPressed = false, downPressed = false, escPressed = false,
+    enterPressed = false;
+//let orientationX, pacmanLevel1OrientationX;
 let playerName, playerScore, playerNameText, playerScoreText, message, playMessage;
 
-const frames = ["pacman-open.png", "pacman-close.png"];
+let frames = ["pacman-open-right.png", "pacman-close-right.png"];
+//let frames2 = ["pacman-open-right.png", "pacman-close-right.png"];
+
+const framesRight = ["pacman-open-right.png", "pacman-close-right.png"];
+const framesRightUp = ["pacman-open-right-up.png", "pacman-close-right-up.png"];
+const framesRightDown = ["pacman-open-right-down.png", "pacman-close-right-down.png"]
+
+const framesLeft = ["pacman-open-left.png", "pacman-close-left.png"];
+const framesLeftUp = ["pacman-open-left-up.png", "pacman-close-left-up.png"];
+const framesLeftDown = ["pacman-open-left-down.png", "pacman-close-left-down.png"];
+
 let frameIndex, frameTime, delta, lasttime, currtime;
 const FRAMERATE = 0.13;
 let lifeCounter = 2;
@@ -94,10 +163,11 @@ let moves = {
   LEFT: 3
 };
 
-let direction, path;
+let direction, path;//, minutes = 59, seconds = 59, tempMinutes, tempSeconds;
 
 // Audio
-let musicPacmanBeginning, soundPacmanMunch, soundPacmanIntermission, soundPacmanEatGhost, soundPacmanDeath;
+let musicPacmanBeginning, soundPacmanMunch, soundPacmanIntermission, soundPacmanEatGhost, soundPacmanDeath,
+    pauseIntermission, intermissionPlaying = false; //, pausePacmanDeath;
 
 // Init function
 function init() {
@@ -129,11 +199,11 @@ function init() {
     resize();
   }
   
-  // ON THE TOP OF OUR SCENE WE PUT A FPS COUNTER FROM MR.DOOB - stats.js ////
-  stats = new Stats();
-  stats.domElement.style.position = 'absolute';
-  stats.domElement.style.top = '0px';
-  document.body.appendChild(stats.domElement);
+//  // ON THE TOP OF OUR SCENE WE PUT A FPS COUNTER FROM MR.DOOB - stats.js ////
+//  stats = new Stats();
+//  stats.domElement.style.position = 'absolute';
+//  stats.domElement.style.top = '0px';
+//  document.body.appendChild(stats.domElement);
 
   // Listen for and adapt to changes to the screen size user changing the window or rotating their device
 //  window.addEventListener("resize", resize);
@@ -191,15 +261,22 @@ function init() {
       volume: 0.2
     });
     
+    // CREATE scenes for game
     menuScene = new Container();
-    gameScene = new Container();
+    gameSceneLevel1 = new Container();
+//    gameSceneLevel2 = new Container();
     gameOverScene = new Container();
     helpScene = new Container();
+    settingsScene = new Container();
+    pauseScene = new Container();
     
     menuScene.visible = true;
-    gameScene.visible = false;
+    gameSceneLevel1.visible = false;
+//    gameSceneLevel2.visible = false;
     gameOverScene.visible = false;
     helpScene.visible = false;
+    settingsScene.visible = false;
+    pauseScene.visible = false;
     
     // Play the sound in `menuScene`
     musicPacmanBeginning.play();
@@ -227,12 +304,29 @@ function init() {
     
     
     textstyle = new TextStyle({
+      fontFamily:'Consolas',
       fontSize: 14,
       fill: "#ffcc00"
     });
     
+//    // Function that check if it is `0` before a one-digit number in time
+//    function checkTime(i) {
+//      if (i < 10) {
+//        i = "0" + i;
+//      }
+//      return i;
+//    }
+    
+    // Capture the keyboard arrow keys, escape - pause, enter - continue
+    left = keyboard(37);
+    up = keyboard(38);
+    right = keyboard(39);
+    down = keyboard(40);
+    esc = keyboard(27);
+    enter = keyboard(13);
+    
     // CREATE `menuScene`
-    pacmanTitle = new PIXI.Text("PACMAN 2017", styleTitle);
+    pacmanTitle = new PIXI.Text("PAC-MAN 2017", styleTitle);
     pacmanTitle.position.set(GAME_WIDTH/2-pacmanTitle.width/2, 7*TILE_SIZE);
     
     btnStartOver = new Sprite(id["button_over.png"]);
@@ -247,7 +341,7 @@ function init() {
     btnStart.buttonMode = true;
     
     playGameTooltip = new Text("START GAME", textstyle);
-    playGameTooltip.position.set(btnStart.x+btnStart.width/2-playGameTooltip.width/2, btnStart.y-28);
+    playGameTooltip.position.set(btnStart.x+btnStart.width/2-playGameTooltip.width/2, btnStart.y-26);
     playGameTooltip.visible = false;
     
     btnStart.mouseover = function onButtonOver() {
@@ -273,65 +367,179 @@ function init() {
     };
     
     btnStartOver.click = function onButtonClick() {
-      state = playing; 
+      if (activeLevel == 1) pacman = pacmanLevel1;
+//      if (activeLevel == 2) pacman = pacmanLevel2;
       pacman.vx = 0;
       pacman.vy = 0;
+      escPressed = false;
+//      minutes = 4;
+//      seconds = 59;
+      frames = framesRight;
+      state = playing1;
     }
     
     playMessage = new PIXI.Text("PLAY", style);
     playMessage.position.set(GAME_WIDTH/2-playMessage.width/2, GAME_HEIGHT - 7*TILE_SIZE+10);
-
-    btnHelpOver = new Sprite(id["questionMark_over.png"]);
-    btnHelpOver.position.set(GAME_WIDTH - 2*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
-    btnHelpOver.interactive = true;
-    btnHelpOver.buttonMode = true;
-    btnHelpOver.visible = false;
     
-    btnHelp = new Sprite(id["questionMark.png"]);
-    btnHelp.position.set(GAME_WIDTH - 2*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
-    btnHelp.interactive = true;
-    btnHelp.buttonMode = true;
+    btnHighscoreOver = new Sprite(id["score_over.png"]);
+    btnHighscoreOver.position.set(GAME_WIDTH - 11*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    btnHighscoreOver.interactive = true;
+    btnHighscoreOver.buttonMode = true;
+    btnHighscoreOver.visible = false;
     
-    btnHelp.mouseover = function onButtonOver() {
-      btnHelpOver.visible = true;
-      btnHelp.visible = false;
+    btnHighscore = new Sprite(id["score.png"]);
+    btnHighscore.position.set(GAME_WIDTH - 11*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    btnHighscore.interactive = true;
+    btnHighscore.buttonMode = true;
+    
+    highscoreGameTooltip = new Text("COMING SOON", textstyle);
+    highscoreGameTooltip.position.set(btnHighscore.x+btnHighscore.width/2-highscoreGameTooltip.width/2, 
+                                      btnHighscore.y-26);
+    highscoreGameTooltip.visible = false;
+    
+    btnHighscore.mouseover = function onButtonOver() {
+      btnHighscoreOver.visible = true;
+      btnHighscore.visible = false;
+      highscoreGameTooltip.visible = true;
     };
     
-    btnHelpOver.mouseout = function onButtonOut() {
-      btnHelpOver.visible = false;
-      btnHelp.visible = true;
+    btnHighscoreOver.mouseout = function onButtonOut() {
+      btnHighscoreOver.visible = false;
+      btnHighscore.visible = true;
+      highscoreGameTooltip.visible = false;
     };
     
-    btnHelpOver.click = function onButtonClick() {
-      state = help;
+    btnSettingsOver = new Sprite(id["controls_over.png"]);
+    btnSettingsOver.position.set(GAME_WIDTH - 9*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    btnSettingsOver.interactive = true;
+    btnSettingsOver.buttonMode = true;
+    btnSettingsOver.visible = false;
+    
+    btnSettings = new Sprite(id["controls.png"]);
+    btnSettings.position.set(GAME_WIDTH - 9*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    btnSettings.interactive = true;
+    btnSettings.buttonMode = true;
+    
+    settingsGameTooltip = new Text("CONTROLS", textstyle);
+    settingsGameTooltip.position.set(btnSettings.x+btnSettings.width/2-settingsGameTooltip.width/2, 
+                                     btnSettings.y-26);
+    settingsGameTooltip.visible = false;
+    
+    btnSettings.mouseover = function onButtonOver() {
+      btnSettingsOver.visible = true;
+      btnSettings.visible = false;
+      settingsGameTooltip.visible = true;
+    };
+    
+    btnSettingsOver.mouseout = function onButtonOut() {
+      btnSettingsOver.visible = false;
+      btnSettings.visible = true;
+      settingsGameTooltip.visible = false;
+    };
+    
+    btnSettingsOver.click = function onButtonClick() {
+      state = settings;
     }
     
+    btnSoundOverDisabled = new Sprite(id["sound_over_disabled.png"]);
+    btnSoundOverDisabled.position.set(GAME_WIDTH - 7*TILE_SIZE-2.5, GAME_HEIGHT - 3*TILE_SIZE-1);
+    btnSoundOverDisabled.interactive = true;
+    btnSoundOverDisabled.buttonMode = true;
+    btnSoundOverDisabled.visible = false;
+    
+    btnSoundDisabled = new Sprite(id["sound_disabled.png"]);
+    btnSoundDisabled.position.set(GAME_WIDTH - 7*TILE_SIZE-2.5, GAME_HEIGHT - 3*TILE_SIZE-1);
+    btnSoundDisabled.interactive = true;
+    btnSoundDisabled.buttonMode = true;
+    btnSoundDisabled.visible = false;
+    
+    btnSoundDisabled.mouseover = function onButtonOver() {
+      btnSoundOverDisabled.visible = true;
+      btnSoundDisabled.visible = false;
+    };
+    
+    btnSoundOverDisabled.mouseout = function onButtonOut() {
+      btnSoundOverDisabled.visible = false;
+      btnSoundDisabled.visible = true;
+    };
+    
+    btnSoundOver = new Sprite(id["sound_over.png"]);
+    btnSoundOver.position.set(GAME_WIDTH - 7*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    btnSoundOver.interactive = true;
+    btnSoundOver.buttonMode = true;
+    btnSoundOver.visible = false;
+    
+    // repro button is image of sound effects
+    btnSound = new Sprite(id["sound.png"]);
+    btnSound.position.set(GAME_WIDTH - 7*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    btnSound.interactive = true;
+    btnSound.buttonMode = true;
+    
+    soundGameTooltip = new Text("MUTE/UNMUTE SOUND EFFECTS", textstyle);
+    soundGameTooltip.position.set(btnSound.x+btnSound.width/2-soundGameTooltip.width/2, btnSound.y-26);
+    soundGameTooltip.visible = false;
+    
+    btnSound.mouseover = function onButtonOver() {
+      btnSoundOver.visible = true;
+      btnSound.visible = false;
+      soundGameTooltip.visible = true;
+    };
+    
+    btnSoundOver.mouseout = function onButtonOut() {
+      btnSoundOver.visible = false;
+      btnSound.visible = true;
+      soundGameTooltip.visible = false;
+    };
+    
+    btnSoundDisabled.mouseover = function onButtonOverDisable() {
+      btnSoundOverDisabled.visible = true;
+      btnSoundDisabled.visible = false;
+      soundGameTooltip.visible = true;
+    };
+    
+    btnSoundOverDisabled.mouseout = function onButtonOutDisable() {
+      btnSoundOverDisabled.visible = false;
+      btnSoundDisabled.visible = true;
+      soundGameTooltip.visible = false;
+    };
+    
+    btnSoundOver.click = function onButtonClick() {
+      btnSoundOver.visible = false;
+      btnSoundOverDisabled.visible = true;
+      soundGameTooltip.visible = true;
+    };
+    
+    btnSoundOverDisabled.click = function onButtonClick() {
+      btnSoundOverDisabled.visible = false;
+      btnSoundOver.visible = true;
+    };
+    
     btnMusicOverDisabled = new Sprite(id["music_over_disabled.png"]);
-    btnMusicOverDisabled.position.set(GAME_WIDTH - 4*TILE_SIZE-2, GAME_HEIGHT - 3*TILE_SIZE-0.5);
+    btnMusicOverDisabled.position.set(GAME_WIDTH - 5*TILE_SIZE-2, GAME_HEIGHT - 3*TILE_SIZE-0.5);
     btnMusicOverDisabled.interactive = true;
     btnMusicOverDisabled.buttonMode = true;
     btnMusicOverDisabled.visible = false;
     
     btnMusicDisabled = new Sprite(id["music_disabled.png"]);
-    btnMusicDisabled.position.set(GAME_WIDTH - 4*TILE_SIZE-2, GAME_HEIGHT - 3*TILE_SIZE-0.5);
+    btnMusicDisabled.position.set(GAME_WIDTH - 5*TILE_SIZE-2, GAME_HEIGHT - 3*TILE_SIZE-0.5);
     btnMusicDisabled.interactive = true;
     btnMusicDisabled.buttonMode = true;
     btnMusicDisabled.visible = false;
     
     btnMusicOver = new Sprite(id["music_over.png"]);
-    btnMusicOver.position.set(GAME_WIDTH - 4*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    btnMusicOver.position.set(GAME_WIDTH - 5*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
     btnMusicOver.interactive = true;
     btnMusicOver.buttonMode = true;
     btnMusicOver.visible = false;
     
     // music button is image of music note
     btnMusic = new Sprite(id["music.png"]);
-    btnMusic.position.set(GAME_WIDTH - 4*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    btnMusic.position.set(GAME_WIDTH - 5*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
     btnMusic.interactive = true;
     btnMusic.buttonMode = true;
     
     musicGameTooltip = new Text("MUTE/UNMUTE MUSIC", textstyle);
-    musicGameTooltip.position.set(btnMusic.x+btnMusic.width/2-musicGameTooltip.width/2, btnMusic.y-28);
+    musicGameTooltip.position.set(btnMusic.x+btnMusic.width/2-musicGameTooltip.width/2, btnMusic.y-26);
     musicGameTooltip.visible = false;
     
     btnMusic.mouseover = function onButtonOver() {
@@ -373,79 +581,42 @@ function init() {
         btnMusicOver.visible = true;
       }
     };
+
+    btnHelpOver = new Sprite(id["questionMark_over.png"]);
+    btnHelpOver.position.set(GAME_WIDTH - 3*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    btnHelpOver.interactive = true;
+    btnHelpOver.buttonMode = true;
+    btnHelpOver.visible = false;
     
-    btnSoundOverDisabled = new Sprite(id["sound_over_disabled.png"]);
-    btnSoundOverDisabled.position.set(GAME_WIDTH - 6*TILE_SIZE-2.5, GAME_HEIGHT - 3*TILE_SIZE-1);
-    btnSoundOverDisabled.interactive = true;
-    btnSoundOverDisabled.buttonMode = true;
-    btnSoundOverDisabled.visible = false;
+    btnHelp = new Sprite(id["questionMark.png"]);
+    btnHelp.position.set(GAME_WIDTH - 3*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
+    btnHelp.interactive = true;
+    btnHelp.buttonMode = true;
     
-    btnSoundDisabled = new Sprite(id["sound_disabled.png"]);
-    btnSoundDisabled.position.set(GAME_WIDTH - 6*TILE_SIZE-2.5, GAME_HEIGHT - 3*TILE_SIZE-1);
-    btnSoundDisabled.interactive = true;
-    btnSoundDisabled.buttonMode = true;
-    btnSoundDisabled.visible = false;
+    helpGameTooltip = new Text("INFO/CREDITS", textstyle);
+    helpGameTooltip.position.set(btnHelp.x+btnHelp.width/2-helpGameTooltip.width/2, btnHelp.y-26);
+    helpGameTooltip.visible = false;
     
-    btnSoundDisabled.mouseover = function onButtonOver() {
-      btnSoundOverDisabled.visible = true;
-      btnSoundDisabled.visible = false;
+    btnHelp.mouseover = function onButtonOver() {
+      btnHelpOver.visible = true;
+      btnHelp.visible = false;
+      helpGameTooltip.visible = true;
     };
     
-    btnSoundOverDisabled.mouseout = function onButtonOut() {
-      btnSoundOverDisabled.visible = false;
-      btnSoundDisabled.visible = true;
+    btnHelpOver.mouseout = function onButtonOut() {
+      btnHelpOver.visible = false;
+      btnHelp.visible = true;
+      helpGameTooltip.visible = false;
     };
     
-    btnSoundOver = new Sprite(id["sound_over.png"]);
-    btnSoundOver.position.set(GAME_WIDTH - 6*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
-    btnSoundOver.interactive = true;
-    btnSoundOver.buttonMode = true;
-    btnSoundOver.visible = false;
-    
-    // repro button is image of sound effects
-    btnSound = new Sprite(id["sound.png"]);
-    btnSound.position.set(GAME_WIDTH - 6*TILE_SIZE, GAME_HEIGHT - 3*TILE_SIZE);
-    btnSound.interactive = true;
-    btnSound.buttonMode = true;
-    
-    soundGameTooltip = new Text("MUTE SOUND EFFECTS", textstyle);
-    soundGameTooltip.position.set(btnSound.x+btnSound.width/2-soundGameTooltip.width/2, btnSound.y-28);
-    soundGameTooltip.visible = false;
-    
-    btnSound.mouseover = function onButtonOver() {
-      btnSoundOver.visible = true;
-      btnSound.visible = false;
-      soundGameTooltip.visible = true;
-    };
-    
-    btnSoundOver.mouseout = function onButtonOut() {
-      btnSoundOver.visible = false;
-      btnSound.visible = true;
-      soundGameTooltip.visible = false;
-    };
-    
-    btnSoundOver.click = function onButtonClick() {
-//      if (musicPacmanBeginning.playing()) {
-//        musicPacmanBeginning.stop();
-      btnSoundOver.visible = false;
-      btnSoundOverDisabled.visible = true;
-      soundGameTooltip.visible = true;
-//      }
-    };
-    
-    btnSoundOverDisabled.click = function onButtonClick() {
-//      if (musicPacmanBeginning.playing() == false) {
-//        musicPacmanBeginning.play();
-      btnSoundOverDisabled.visible = false;
-      btnSoundOver.visible = true;
-      soundGameTooltip.visible = false;
-//      }
-    };
+    btnHelpOver.click = function onButtonClick() {
+      state = help;
+    }
     
     for (let i = 0; i < level0.length; i++) {
       for (let c = 0; c < level0[i].length; c++) {
         if (level0[i][c] == 'b') {
-          box = new Sprite(id["krabice.png"]);
+          box = new Sprite(id["box.png"]);
           box.position.x = c * TILE_SIZE + 4*TILE_SIZE-TILE_SIZE/2;
           box.position.y = i * TILE_SIZE + 10*TILE_SIZE+TILE_SIZE/2;
           menuScene.addChild(box);
@@ -465,38 +636,47 @@ function init() {
     // Create pacman in `menuScene`
     pacmanMenu = new Sprite(id[frames[frameIndex]]);
     frameTime = FRAMERATE;
-    pacmanMenu.anchor.set(0.5);
-    pacmanMenu.position.set(5*TILE_SIZE, 12*TILE_SIZE);
+    pacmanMenu.position.set(5*TILE_SIZE-TILE_SIZE/2+3, 12*TILE_SIZE-TILE_SIZE/2+3);
     pacmanMenu.vx = SPEED;
-    pacmanMenu.scale.set(1)
+    pacmanMenu.scale.set(0.8);
     
     menuScene.addChild(pacmanTitle, btnStart, btnStartOver, playMessage, btnHelp, btnHelpOver, btnMusic, btnMusicOver, 
                        btnMusicDisabled, btnMusicOverDisabled, btnSound, btnSoundOver, btnSoundDisabled, 
-                       btnSoundOverDisabled, pacmanMenu, musicGameTooltip, soundGameTooltip, playGameTooltip);
+                       btnSoundOverDisabled, pacmanMenu, musicGameTooltip, soundGameTooltip, playGameTooltip, 
+                       btnHighscore, btnHighscoreOver, highscoreGameTooltip, helpGameTooltip, btnSettings, 
+                       btnSettingsOver, settingsGameTooltip);
     // END `menuScene`
     
     // CREATE `helpScene`
-    btnCloseOver = new Sprite(id["close_over.png"]);
-    btnCloseOver.position.set(GAME_WIDTH - 3*TILE_SIZE, 2*TILE_SIZE);
-    btnCloseOver.interactive = true;
-    btnCloseOver.buttonMode = true;
-    btnCloseOver.visible = false;
+    // add `close` button to the scene
+    btnCloseHelpOver = new Sprite(id["close_over.png"]);
+    btnCloseHelpOver.position.set(GAME_WIDTH - 3*TILE_SIZE, 2*TILE_SIZE);
+    btnCloseHelpOver.interactive = true;
+    btnCloseHelpOver.buttonMode = true;
+    btnCloseHelpOver.visible = false;
+
+    btnCloseHelp = new Sprite(id["close.png"]);
+    btnCloseHelp.position.set(GAME_WIDTH - 3*TILE_SIZE, 2*TILE_SIZE);
+    btnCloseHelp.interactive = true;
+    btnCloseHelp.buttonMode = true;
     
-    btnClose = new Sprite(id["close.png"]);
-    btnClose.position.set(GAME_WIDTH - 3*TILE_SIZE, 2*TILE_SIZE);
-    btnClose.interactive = true;
-    btnClose.buttonMode = true;
-    btnClose.mouseover = function onButtonOver() {
-      btnCloseOver.visible = true;
-      btnClose.visible = false;
+    let closeGameTooltip = new Text("BACK TO MENU", textstyle);
+    closeGameTooltip.position.set(btnCloseHelp.x+btnCloseHelp.width/2-closeGameTooltip.width/2, btnCloseHelp.y-26);
+    closeGameTooltip.visible = false;
+    
+    btnCloseHelp.mouseover = function onButtonOver() {
+      btnCloseHelpOver.visible = true;
+      btnCloseHelp.visible = false;
+      closeGameTooltip.visible = true;
     };
     
-    btnCloseOver.mouseout = function onButtonOut() {
-      btnCloseOver.visible = false;
-      btnClose.visible = true;
+    btnCloseHelpOver.mouseout = function onButtonOut() {
+      btnCloseHelpOver.visible = false;
+      btnCloseHelp.visible = true;
+      closeGameTooltip.visible = false;
     };
-    
-    btnCloseOver.click = function onButtonClick() {
+
+    btnCloseHelpOver.click = function onButtonClick() {
       state = menu;
     }
     
@@ -528,167 +708,342 @@ function init() {
     });
     
     let helpTitle = new PIXI.Text("School project to subject 'Innovation Course for the IT Specialists'", helpTitleStyle);
-    helpTitle.position.set(2*TILE_SIZE, 4*TILE_SIZE);
+    helpTitle.position.set(GAME_WIDTH/2-helpTitle.width/2, 4*TILE_SIZE);
     
     let helpAuthor = new PIXI.Text("Author: David Krénar", helpAuthorStyle);
-    helpAuthor.position.set(2*TILE_SIZE, 8*TILE_SIZE-TILE_SIZE/2+4);
+    helpAuthor.position.set(GAME_WIDTH/2-helpAuthor.width/2, 8*TILE_SIZE-TILE_SIZE/2+4);
     
     let helpSources = new PIXI.Text("Audio and image sources:", helpTitleStyle);
-    helpSources.position.set(2*TILE_SIZE, 10*TILE_SIZE);
+    helpSources.position.set(GAME_WIDTH/2-helpSources.width/2, 10*TILE_SIZE);
     
-    let helpSourcesSound = new PIXI.Text("Sound:\nhttp://www.classicgaming.cc/classics/pac-man/sounds", helpStyle);
-    helpSourcesSound.position.set(2*TILE_SIZE, 11*TILE_SIZE);
+    let helpSourcesSound = new PIXI.Text("Sounds:\nhttp://www.classicgaming.cc/classics/pac-man/sounds", helpStyle);
+    helpSourcesSound.position.set(2*TILE_SIZE-TILE_SIZE/4, 11*TILE_SIZE);
     
-    let helpSourcesImage = new PIXI.Text("Image:\nhttp://opengameart.org/content/ghosts\nhttp://opengameart.org/content/winter-platformer-\ngame-tileset", helpStyle);
-    helpSourcesImage.position.set(2*TILE_SIZE, 13*TILE_SIZE);
+    let helpSourcesImage = new PIXI.Text("Images:\nhttp://opengameart.org/content/ghosts\nhttp://opengameart.org/content/winter-platformer-\ngame-tileset\nhttps://opengameart.org/content/medieval-game-\nbutton-pack", helpStyle);
+    helpSourcesImage.position.set(2*TILE_SIZE-TILE_SIZE/4, 13*TILE_SIZE);
     
-    helpScene.addChild(btnClose, btnCloseOver, helpTitle, helpAuthor, helpSources, helpSourcesSound, helpSourcesImage);
+    helpScene.addChild(btnCloseHelp, btnCloseHelpOver, helpTitle, helpAuthor, helpSources, helpSourcesSound,
+                       helpSourcesImage, closeGameTooltip);
     // END `helpScene`
     
-    // CREATE `gameScene`
-    for (let i = 0; i < level1.length; i++) {
-      for (let c = 0; c < level1[i].length; c++) {
-        if (level1[i][c] == 'b') {
-          box = new Sprite(id["krabice.png"]);
-          box.position.x = c * TILE_SIZE;
-          box.position.y = i * TILE_SIZE + 2*TILE_SIZE;
-          gameScene.addChild(box);
-          boxes.push(box);
-        }
-        if (level1[i][c] == 'a') {
-          greenCube = new Sprite(id["green_cube.png"]);
-          greenCube.position.x = c * TILE_SIZE;
-          greenCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
-          greenCubes.push(greenCube);
-          pinkBall = new Sprite(id["pink-ball.png"]);
-          pinkBall.position.x = c * TILE_SIZE + TILE_SIZE/2 - pinkBall.width/2;
-          pinkBall.position.y = i * TILE_SIZE + 2*TILE_SIZE + TILE_SIZE/2 - pinkBall.height/2;
-          gameScene.addChild(greenCube, pinkBall);
-          pinkBalls.push(pinkBall);
-        }
-        if (level1[i][c] == 'y') {
-          yellowCube = new Sprite(id["yellow_cube.png"]);
-          yellowCube.position.x = c * TILE_SIZE;
-          yellowCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
-          gameScene.addChild(yellowCube);
-        }
-        if (level1[i][c] == 'x') {
-          yellowCube = new Sprite(id["yellow_cube.png"]);
-          yellowCube.position.x = c * TILE_SIZE;
-          yellowCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
-          orangeBall = new Sprite(id["orange-ball.png"]);
-          orangeBall.position.x = c * TILE_SIZE + TILE_SIZE/2 - orangeBall.width/2;
-          orangeBall.position.y = i * TILE_SIZE + 2*TILE_SIZE + TILE_SIZE/2 - orangeBall.height/2;
-          orangeBalls.push(orangeBall);
-          gameScene.addChild(yellowCube, orangeBall);
-        }
-        if (level1[i][c] == '.') {
-          orangeBall = new Sprite(id["orange-ball.png"]);
-          orangeBall.position.x = c * TILE_SIZE + TILE_SIZE/2 - orangeBall.width/2;
-          orangeBall.position.y = i * TILE_SIZE + 2*TILE_SIZE + TILE_SIZE/2 - orangeBall.height/2;
-          gameScene.addChild(orangeBall);
-          orangeBalls.push(orangeBall);
-        }
-        if (level1[i][c] == 'v') {
-          greenCube = new Sprite(id["green_cube.png"]);
-          greenCube.position.x = c * TILE_SIZE;
-          greenCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
-          greenCubes.push(greenCube);
-          orangeBall = new Sprite(id["orange-ball.png"]);
-          orangeBall.position.x = c * TILE_SIZE + TILE_SIZE/2 - orangeBall.width/2;
-          orangeBall.position.y = i * TILE_SIZE + 2*TILE_SIZE + TILE_SIZE/2 - orangeBall.height/2;
-          orangeBalls.push(orangeBall);
-          gameScene.addChild(greenCube, orangeBall);
-        }
-        if (level1[i][c] == 'w') {
-          greenCube = new Sprite(id["green_cube.png"]);
-          greenCube.position.x = c * TILE_SIZE;
-          greenCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
-          gameScene.addChild(greenCube);
-          greenCubes.push(greenCube);
-        }
-        if (level1[i][c] == '_') {
-          iceCube = new Sprite(id["krabice.png"]);
-          iceCube.position.x = c * TILE_SIZE;
-          iceCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
-          gameScene.addChild(iceCube);
-          iceCube.visible = false;
-        }
-        if (level1[i][c] == 'r') {
-          redCube = new Sprite(id["yellow_cube.png"]);
-          redCube.position.x = c * TILE_SIZE;
-          redCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
-          gameScene.addChild(redCube);
+    // CREATE `settingsScene`
+    // add `close` button to the scene
+    btnCloseSettingsOver = new Sprite(id["close_over.png"]);
+    btnCloseSettingsOver.position.set(GAME_WIDTH - 3*TILE_SIZE, 2*TILE_SIZE);
+    btnCloseSettingsOver.interactive = true;
+    btnCloseSettingsOver.buttonMode = true;
+    btnCloseSettingsOver.visible = false;
+
+    btnCloseSettings = new Sprite(id["close.png"]);
+    btnCloseSettings.position.set(GAME_WIDTH - 3*TILE_SIZE, 2*TILE_SIZE);
+    btnCloseSettings.interactive = true;
+    btnCloseSettings.buttonMode = true;
+    
+    let closeSettingTooltip = new Text("BACK TO MENU", textstyle);
+    closeSettingTooltip.position.set(btnCloseSettings.x+btnCloseSettings.width/2-closeSettingTooltip.width/2,
+                                     btnCloseSettings.y-26);
+    closeSettingTooltip.visible = false;
+    
+    btnCloseSettings.mouseover = function onButtonOver() {
+      btnCloseSettingsOver.visible = true;
+      btnCloseSettings.visible = false;
+      closeSettingTooltip.visible = true;
+    };
+
+    btnCloseSettingsOver.mouseout = function onButtonOut() {
+      btnCloseSettingsOver.visible = false;
+      btnCloseSettings.visible = true;
+      closeSettingTooltip.visible = false;
+    };
+
+    btnCloseSettingsOver.click = function onButtonClick() {
+      state = menu;
+    }
+    
+    let settingsTitle = new PIXI.Text("GAME CONTROLS", styleTitle);
+    settingsTitle.position.set(GAME_WIDTH/2-settingsTitle.width/2, 6*TILE_SIZE);
+    
+    let settingsTextControls = new PIXI.Text("Use your arrow keys to move PAC-MAN through the maze.", helpAuthorStyle);
+    settingsTextControls.position.set(GAME_WIDTH/2-settingsTextControls.width/2, 9*TILE_SIZE);
+    
+    let btnArrowUp = new Sprite(id["control_up.png"]);
+    btnArrowUp.position.set(GAME_WIDTH/2-btnArrowUp.width/2, 11*TILE_SIZE+TILE_SIZE/2);
+    
+    let btnArrowRight = new Sprite(id["control_right.png"]);
+    btnArrowRight.position.set(GAME_WIDTH/2-btnArrowRight.width/2+2*TILE_SIZE, 13*TILE_SIZE+TILE_SIZE/2);
+    
+    let btnArrowDown = new Sprite(id["control_down.png"]);
+    btnArrowDown.position.set(GAME_WIDTH/2-btnArrowDown.width/2, 13*TILE_SIZE+TILE_SIZE/2);
+    
+    let btnArrowLeft = new Sprite(id["control_left.png"]);
+    btnArrowLeft.position.set(GAME_WIDTH/2-btnArrowLeft.width/2-2*TILE_SIZE, 13*TILE_SIZE+TILE_SIZE/2);
+    
+    let settingsTextPause = new PIXI.Text("ESC - pause game\nENTER - continue game", helpAuthorStyle);
+    settingsTextPause.position.set(GAME_WIDTH/2-settingsTextPause.width/2, 16*TILE_SIZE);
+    
+    let eatingText = new PIXI.Text("Eat orangeball = 10\nEat pinkball = 50\nEat ghost (in intermission) = 200", helpAuthorStyle);
+    eatingText.position.set(GAME_WIDTH/2-eatingText.width/2, 18*TILE_SIZE+TILE_SIZE/4);
+    
+    settingsScene.addChild(btnCloseSettings, btnCloseSettingsOver, settingsTitle, settingsTextControls, btnArrowUp,
+                           btnArrowRight, btnArrowDown, btnArrowLeft, settingsTextPause, closeSettingTooltip, eatingText);
+    // END `settingsScene`
+    
+    // CREATE `pauseScene`
+    let pauseTitle = new PIXI.Text("PAUSE", styleTitle);
+    pauseTitle.position.set(GAME_WIDTH/2-pauseTitle.width/2, 10*TILE_SIZE);
+    
+    let pauseContinueText = new PIXI.Text("Press ENTER to continue.", helpAuthorStyle);
+    pauseContinueText.position.set(GAME_WIDTH/2-pauseContinueText.width/2, 14*TILE_SIZE);
+    
+    pauseScene.addChild(pauseTitle, pauseContinueText);
+    // END `pauseScene`
+    
+    // CREATE `gameSceneLevel1`
+    // Create maze level1
+    if (activeLevel == 1) {
+      for (let i = 0; i < level1.length; i++) {
+        for (let c = 0; c < level1[i].length; c++) {
+          if (level1[i][c] == 'b') {
+            box = new Sprite(id["box.png"]);
+            box.position.x = c * TILE_SIZE;
+            box.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+            gameSceneLevel1.addChild(box);
+            boxes.push(box);
+          }
+          if (level1[i][c] == 'a') {
+            greenCube = new Sprite(id["black-cube.png"]);
+            greenCube.position.x = c * TILE_SIZE;
+            greenCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+            greenCubes.push(greenCube);
+            pinkBall = new Sprite(id["pink-ball.png"]);
+            pinkBall.position.x = c * TILE_SIZE + TILE_SIZE/2 - pinkBall.width/2;
+            pinkBall.position.y = i * TILE_SIZE + 2*TILE_SIZE + TILE_SIZE/2 - pinkBall.height/2;
+            gameSceneLevel1.addChild(greenCube, pinkBall);
+            pinkBalls.push(pinkBall);
+          }
+          if (level1[i][c] == 'y') {
+            yellowCube = new Sprite(id["black-cube.png"]);
+            yellowCube.position.x = c * TILE_SIZE;
+            yellowCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+            gameSceneLevel1.addChild(yellowCube);
+          }
+          if (level1[i][c] == '.') {
+            orangeBall = new Sprite(id["orange-ball.png"]);
+            orangeBall.position.x = c * TILE_SIZE + TILE_SIZE/2 - orangeBall.width/2;
+            orangeBall.position.y = i * TILE_SIZE + 2*TILE_SIZE + TILE_SIZE/2 - orangeBall.height/2;
+            gameSceneLevel1.addChild(orangeBall);
+            orangeBalls.push(orangeBall);
+          }
+          if (level1[i][c] == 'v') {
+            greenCube = new Sprite(id["black-cube.png"]);
+            greenCube.position.x = c * TILE_SIZE;
+            greenCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+            greenCubes.push(greenCube);
+            orangeBall = new Sprite(id["orange-ball.png"]);
+            orangeBall.position.x = c * TILE_SIZE + TILE_SIZE/2 - orangeBall.width/2;
+            orangeBall.position.y = i * TILE_SIZE + 2*TILE_SIZE + TILE_SIZE/2 - orangeBall.height/2;
+            orangeBalls.push(orangeBall);
+            gameSceneLevel1.addChild(greenCube, orangeBall);
+          }
+          if (level1[i][c] == 'w') {
+            greenCube = new Sprite(id["black-cube.png"]);
+            greenCube.position.x = c * TILE_SIZE;
+            greenCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+            gameSceneLevel1.addChild(greenCube);
+            greenCubes.push(greenCube);
+          }
+          if (level1[i][c] == '_') {
+            iceCube = new Sprite(id["box.png"]);
+            iceCube.position.x = c * TILE_SIZE;
+            iceCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+            gameSceneLevel1.addChild(iceCube);
+            iceCube.visible = false;
+          }
+          if (level1[i][c] == 'r') {
+            redCube = new Sprite(id["black-cube.png"]);
+            redCube.position.x = c * TILE_SIZE;
+            redCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+            gameSceneLevel1.addChild(redCube);
+          }
         }
       }
     }
-        
+    
+//    // Create maze level2
+//    if (activeLevel == 2) {
+////      boxes = [], ghosts = [], orangeBalls = [], pinkBalls = [], greenCubes = [];
+//      for (let i = 0; i < level2.length; i++) {
+//        for (let c = 0; c < level2[i].length; c++) {
+//          if (level2[i][c] == 'b') {
+//            box = new Sprite(id["ice-cube.png"]);
+//            box.position.x = c * TILE_SIZE;
+//            box.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+//            gameSceneLevel2.addChild(box);
+//            boxes.push(box);
+//          }
+//          if (level2[i][c] == 'a') {
+//            pinkBall = new Sprite(id["pink-ball.png"]);
+//            pinkBall.position.x = c * TILE_SIZE + TILE_SIZE/2 - pinkBall.width/2;
+//            pinkBall.position.y = i * TILE_SIZE + 2*TILE_SIZE + TILE_SIZE/2 - pinkBall.height/2;
+//            gameSceneLevel2.addChild(pinkBall);
+//            pinkBalls.push(pinkBall);
+//          }
+//          if (level2[i][c] == 'y') {
+//            yellowCube = new Sprite(id["yellow-cube.png"]);
+//            yellowCube.position.x = c * TILE_SIZE;
+//            yellowCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+//            gameSceneLevel2.addChild(yellowCube);
+//          }
+//          if (level2[i][c] == '.') {
+//            orangeBall = new Sprite(id["orange-ball.png"]);
+//            orangeBall.position.x = c * TILE_SIZE + TILE_SIZE/2 - orangeBall.width/2;
+//            orangeBall.position.y = i * TILE_SIZE + 2*TILE_SIZE + TILE_SIZE/2 - orangeBall.height/2;
+//            gameSceneLevel2.addChild(orangeBall);
+//            orangeBalls.push(orangeBall);
+//          }
+//          if (level2[i][c] == 'v') {
+//            greenCube = new Sprite(id["green-cube.png"]);
+//            greenCube.position.x = c * TILE_SIZE;
+//            greenCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+//            greenCubes.push(greenCube);
+//            orangeBall = new Sprite(id["orange-ball.png"]);
+//            orangeBall.position.x = c * TILE_SIZE + TILE_SIZE/2 - orangeBall.width/2;
+//            orangeBall.position.y = i * TILE_SIZE + 2*TILE_SIZE + TILE_SIZE/2 - orangeBall.height/2;
+//            orangeBalls.push(orangeBall);
+//            gameSceneLevel2.addChild(greenCube, orangeBall);
+//          }
+//          if (level2[i][c] == 'w') {
+//            greenCube = new Sprite(id["green-cube.png"]);
+//            greenCube.position.x = c * TILE_SIZE;
+//            greenCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+//            gameSceneLevel2.addChild(greenCube);
+//            greenCubes.push(greenCube);
+//          }
+//          if (level2[i][c] == '_') {
+//            iceCube = new Sprite(id["box.png"]);
+//            iceCube.position.x = c * TILE_SIZE;
+//            iceCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+//            gameSceneLevel2.addChild(iceCube);
+//            iceCube.visible = false;
+//          }
+//          if (level2[i][c] == 'r') {
+//            redCube = new Sprite(id["red-cube.png"]);
+//            redCube.position.x = c * TILE_SIZE;
+//            redCube.position.y = i * TILE_SIZE + 2*TILE_SIZE;
+//            gameSceneLevel2.addChild(redCube);
+//          }
+//        }
+//      }
+//    }
+    
     frameIndex = 0;
-    
-    // Create pacman in `gameScene`
-    pacman = new Sprite(id[frames[frameIndex]]);
-    frameTime = FRAMERATE;
-    pacman.position.set(9*TILE_SIZE+3, 18*TILE_SIZE+3);
-    pacman.vx = 0;
-    pacman.vy = 0;
-    pacman.scale.set(0.8);
-    pacman.eatGhost = false;
-    
-    // Create the red ghost called `devil`
-    devil = new Sprite(id["dablik.png"]);
-    devil.position.set(9*TILE_SIZE, 10*TILE_SIZE);
-    devil.vx = -GHOST_SPEED;
-    devil.vy = 0;
-    devil.path = moves.LEFT;
-    ghosts.push(devil);
-    
-    // Create the blue ghost called `princess`
-    princess = new Sprite(id["princezna.png"]);
-    princess.position.set(9*TILE_SIZE, 12*TILE_SIZE);
-    princess.vx = 0;
-    princess.vy = -GHOST_SPEED;
-    princess.path = moves.UP;
-    ghosts.push(princess);
-    
-    // Create the blue ghost called `cowboy`
-    cowboy = new Sprite(id["pistolnik.png"]);
-    cowboy.position.set(8*TILE_SIZE, 12*TILE_SIZE);
-    cowboy.vx = GHOST_SPEED;
-    cowboy.vy = 0;
-    cowboy.path = moves.RIGHT;
-    ghosts.push(cowboy);
-    
-    // Create the blue ghost called `fox`
-    fox = new Sprite(id["lisak.png"]);
-    fox.position.set(10*TILE_SIZE, 12*TILE_SIZE);
-    fox.vx = -GHOST_SPEED;
-    fox.vy = 0;
-    fox.path = moves.LEFT;
-    ghosts.push(fox);
-    
-    // Create pacman first life icon
-    pacmanLife1 = new Sprite(id["pacman-open.png"]);
-    pacmanLife1.position.set(TILE_SIZE, 24*TILE_SIZE+3);
-    pacmanLife1.scale.set(0.8);
-    
-    // Create pacman second life icon
-    pacmanLife2 = new Sprite(id["pacman-open.png"]);
-    pacmanLife2.position.set(2*TILE_SIZE, 24*TILE_SIZE+3);
-    pacmanLife2.scale.set(0.8);
 
-    playerNameText = new PIXI.Text("1UP", style);
+    // Create pacman in `gameSceneLevel1`
+    pacmanLevel1 = new Sprite(id[frames[frameIndex]]);
+    frameTime = FRAMERATE;
+    pacmanLevel1.position.set(PACMAN_START_X, PACMAN_START_Y);
+    pacmanLevel1.vx = 0;
+    pacmanLevel1.vy = 0;
+    pacmanLevel1.scale.set(0.7);
+    pacmanLevel1.eatGhost = false;
+
+    // Create the red ghost called `devilLevel1`
+    devilLevel1 = new Sprite(id["devil.png"]);
+    devilLevel1.position.set(9*TILE_SIZE, 10*TILE_SIZE);
+    devilLevel1.vx = -GHOST_SPEED;
+    devilLevel1.vy = 0;
+    devilLevel1.path = moves.LEFT;
+    ghosts.push(devilLevel1);
+
+    // Create the blue ghost called `princessLevel1`
+    princessLevel1 = new Sprite(id["princess.png"]);
+    princessLevel1.position.set(9*TILE_SIZE, 12*TILE_SIZE);
+    princessLevel1.vx = 0;
+    princessLevel1.vy = -GHOST_SPEED;
+    princessLevel1.path = moves.UP;
+    ghosts.push(princessLevel1);
+
+    // Create the blue ghost called `cowboyLevel1`
+    cowboyLevel1 = new Sprite(id["cowboy.png"]);
+    cowboyLevel1.position.set(8*TILE_SIZE, 12*TILE_SIZE);
+    cowboyLevel1.vx = GHOST_SPEED;
+    cowboyLevel1.vy = 0;
+    cowboyLevel1.path = moves.RIGHT;
+    ghosts.push(cowboyLevel1);
+
+    // Create the blue ghost called `foxLevel1`
+    foxLevel1 = new Sprite(id["fox.png"]);
+    foxLevel1.position.set(10*TILE_SIZE, 12*TILE_SIZE);
+    foxLevel1.vx = -GHOST_SPEED;
+    foxLevel1.vy = 0;
+    foxLevel1.path = moves.LEFT;
+    ghosts.push(foxLevel1);
+
+    // Create pacman first life icon
+    pacmanLevel1Life1 = new Sprite(id["pacman-open-right.png"]);
+    pacmanLevel1Life1.position.set(TILE_SIZE, 24*TILE_SIZE+3);
+    pacmanLevel1Life1.scale.set(0.8);
+
+    // Create pacman second life icon
+    pacmanLevel1Life2 = new Sprite(id["pacman-open-right.png"]);
+    pacmanLevel1Life2.position.set(2*TILE_SIZE, 24*TILE_SIZE+3);
+    pacmanLevel1Life2.scale.set(0.8);
+
+    playerNameText = new PIXI.Text("PLAYER 1", style);
+    playerNameText.position.set(2*TILE_SIZE, 6);
+
     playerScore = 0;
     playerScoreText = new PIXI.Text(playerScore.toString(), style);
+    playerScoreText.position.set(2*TILE_SIZE, TILE_SIZE);
 
-    playerNameText.position.set(2*TILE_SIZE, 6);
-    playerScoreText.position.set(2*TILE_SIZE, 32);
-    
-    gameScene.addChild(pacman, devil, princess, cowboy, fox, pacmanLife1, pacmanLife2, playerNameText, playerScoreText);
-    // END `gameScene`
+    gameSceneLevel1.addChild(pacmanLevel1, devilLevel1, princessLevel1, cowboyLevel1, foxLevel1, pacmanLevel1Life1, pacmanLevel1Life2,                                      playerNameText, playerScoreText
+//                       timeMes, countdown
+    );
+    // End of create maze level1
+        
+//    let timeMes = new Text("COUNTDOWN", style);
+//    timeMes.position.set(GAME_WIDTH-timeMes.width-2*TILE_SIZE, 6);
+//    
+//    let countdown = new Text("-:--", style);
+//    countdown.position.set(GAME_WIDTH-countdown.width-2*TILE_SIZE, TILE_SIZE);
+//    
+//    
+//    function startTimer() {
+////      var today = new Date();
+////      let day = new Date().getTime();
+////      var h = today.getHours();
+////      var m = today.getMinutes();
+////      var s = today.getSeconds();
+//      // add a zero in front of numbers<10
+////      m = checkTime(m);
+////      s = checkTime(s);
+////      let time = "TIME " + h + ":" + m + ":" + s;
+////      console.log(state == playing1)
+//      if (seconds > 0) {
+//        seconds -= 1;
+//      } else if (seconds == 0 & minutes > 0) {
+//        seconds = 59;
+//        minutes -= 1;
+//      } else if (seconds == 0 & minutes == 0) {
+//        state = end;
+//        message.text = "YOU LOST!";
+//      }
+////      console.log(time);
+////      timeMes.text = time;
+//      seconds = checkTime(seconds);
+//      countdown.text = minutes + ":" + seconds;
+//      let t = setTimeout(function() {
+//        startTimer()
+//      }, 1000);
+//    }
+//    
+//    startTimer();
+
+    // END `gameSceneLevel2`
     
     // CREATE `gameOverScene`
-    message = new Text("The End!", {font: "64px Futura", fill: "#ffcc00"});
-    
+    message = new Text("THE END OF GAME!", {font: "60px Consolas", fill: "#ffcc00"});
+                      //YOU WON LEVEL 1!  
     message.x = GAME_WIDTH/2 - message.width/2;
     message.y = GAME_HEIGHT/2 - message.height/2;
     
@@ -703,8 +1058,8 @@ function init() {
     btnPlay.interactive = true;
     btnPlay.buttonMode = true;
     
-    restartGameTooltip = new Text("PLAY AGAIN", textstyle);
-    restartGameTooltip.position.set(btnPlayOver.x+btnPlayOver.width/2, btnPlayOver.y-28);
+    restartGameTooltip = new Text("BACK TO MENU", textstyle);
+    restartGameTooltip.position.set(btnPlayOver.x+btnPlayOver.width/2-restartGameTooltip.width/2, btnPlayOver.y-26);
     restartGameTooltip.visible = false;
     
     btnPlay.mouseover = function onButtonOver() {
@@ -720,27 +1075,36 @@ function init() {
     };
     
     btnPlayOver.click = function onButtonClick() {
+//      if (lifeCounter == 0 || activeLevel == 2) 
       location.reload(); // game restart  = reload browser window
-    }
+//      if (lifeCounter >= 0 && activeLevel == 1) {
+//        activeLevel = 2;
+//        gameSceneLevel2.visible = true;
+//        gameOverScene.visible = false;
+////        pacman = pacmanLevel2;
+//        state = playing2;
+////        state = menu;
+      }
+    
     
     gameOverScene.addChild(message, btnPlay, btnPlayOver, restartGameTooltip);
     // END `gameOverScene`
     
     // STAGE
-    stage.addChild(menuScene, gameScene, gameOverScene, helpScene);
+    stage.addChild(menuScene, gameSceneLevel1, gameOverScene, settingsScene, helpScene, pauseScene);
     
     // Move the pacman
-    // Capture the keyboard arrow keys, escape key - pause
-    left = keyboard(37),
-    up = keyboard(38),
-    right = keyboard(39),
-    down = keyboard(40),
-    esc = keyboard(27);
-
     // Right arrow key `press` method
     right.press = () => {
-      pacman.vx = SPEED;
-      pacman.vy = 0;
+      if (activeLevel == 1) {
+        pacmanLevel1.vx = SPEED;
+        pacmanLevel1.vy = 0;
+      }
+//      if (activeLevel == 2) {
+//        pacmanLevel2.vx = SPEED;
+//        pacmanLevel2.vy = 0;
+//      }
+      frames = framesRight;
       rightPressed = true;
       leftPressed = false;
       upPressed = false;
@@ -749,8 +1113,15 @@ function init() {
 
     // Left arrow key `press` method
     left.press = () => {
-      pacman.vx = -SPEED;
-      pacman.vy = 0;
+      if (activeLevel == 1) {
+        pacmanLevel1.vx = -SPEED;
+        pacmanLevel1.vy = 0;
+      }
+//      if (activeLevel == 2) {
+//        pacmanLevel2.vx = -SPEED;
+//        pacmanLevel2.vy = 0;
+//      }
+      frames = framesLeft;
       leftPressed = true;
       rightPressed = false;
       upPressed = false;
@@ -759,8 +1130,18 @@ function init() {
     
     // Up arrow key `press` method
     up.press = () => {
-      pacman.vx = 0;
-      pacman.vy = -SPEED;
+      if (activeLevel == 1) {
+        pacmanLevel1.vx = 0;
+        pacmanLevel1.vy = -SPEED;
+      }
+//      if (activeLevel == 2) {
+//        pacmanLevel1.vx = 0;
+//        pacmanLevel1.vy = -SPEED;
+//      }
+      if (frames == framesRight) frames = framesRightUp;
+      if (frames == framesLeft) frames = framesLeftUp;
+      if (frames == framesRightDown) frames = framesLeftUp;
+      if (frames == framesLeftDown) frames = framesRightUp;
       upPressed = true;
       rightPressed = false;
       leftPressed = false;
@@ -769,8 +1150,18 @@ function init() {
 
     // Down arrow key `press` method
     down.press = () => {
-      pacman.vx = 0;
-      pacman.vy = SPEED;
+      if (activeLevel == 1) {
+        pacmanLevel1.vx = 0;
+        pacmanLevel1.vy = SPEED;
+      }
+//      if (activeLevel == 2) {
+//        pacmanLevel1.vx = 0;
+//        pacmanLevel1.vy = SPEED;
+//      }
+      if (frames == framesRight) frames = framesRightDown;
+      if (frames == framesLeft) frames = framesLeftDown;
+      if (frames == framesRightUp) frames = framesLeftDown;
+      if (frames == framesLeftUp) frames = framesRightDown;
       downPressed = true;
       rightPressed = false;
       leftPressed = false;
@@ -779,16 +1170,38 @@ function init() {
 
     // ESC key `press` method
     esc.press = () => {
-      pacman.vx = 0;
-      pacman.vy = 0;
-      devil.vx = 0;
-      devil.vy = 0;
-      princess.vx = 0;
-      princess.vy = 0;
-      cowboy.vx = 0;
-      cowboy.vy = 0;
-      fox.vx = 0;
-      fox.vy = 0;
+      escPressed = true;
+      enterPressed = false;
+      if (soundPacmanIntermission.playing()) {
+        intermissionPlaying = true;
+        soundPacmanIntermission.pause();
+        pauseIntermission = soundPacmanIntermission.pause()._sounds[0]._seek;
+      }
+//      soundPacmanDeath.pause();
+//      pausePacmanDeath = soundPacmanDeath.pause()._sounds[0]._seek;
+//      pacman.vx = 0;
+//      pacman.vy = 0;
+//      devilLevel1.vx = 0;
+//      devilLevel1.vy = 0;
+//      princessLevel1.vx = 0;
+//      princessLevel1.vy = 0;
+//      cowboyLevel1.vx = 0;
+//      cowboyLevel1.vy = 0;
+//      foxLevel1.vx = 0;
+//      foxLevel1.vy = 0;
+    }
+    
+    // ENTER key `press` method
+    enter.press = () => {
+      enterPressed = true;
+      escPressed = false;
+      if (intermissionPlaying) {
+        soundPacmanIntermission.seek(pauseIntermission);
+        soundPacmanIntermission.play();
+        intermissionPlaying = false;
+      }
+//      soundPacmanDeath.seek(pausePacmanDeath);
+//      soundPacmanDeath.play();
     }
     
     lasttime = new Date().getTime();
@@ -799,7 +1212,7 @@ function init() {
 // Runs the current game `state` in a loop and render the sprites
 function gameLoop() {
 
-  stats.begin();
+//  stats.begin();
   // monitored code goes here
 
   // Update the current game state:
@@ -816,7 +1229,10 @@ function gameLoop() {
     if (frameIndex >= frames.length) {
       frameIndex = 0;
     }
-    pacman.texture = PIXI.Texture.fromFrame(frames[frameIndex]);
+//    if (activeLevel == 1) pacman = pacmanLevel1;
+//    if (activeLevel == 2) pacman = pacmanLevel2;
+    pacmanLevel1.texture = PIXI.Texture.fromFrame(frames[frameIndex]);
+//    pacmanLevel2.texture = PIXI.Texture.fromFrame(frames2[frameIndex]);
     pacmanMenu.texture = PIXI.Texture.fromFrame(frames[frameIndex]);
     frameTime = FRAMERATE;
   }
@@ -829,25 +1245,34 @@ function gameLoop() {
   
   lasttime = currtime;
 
-  stats.end();
+//  stats.end();
 }
 
 // Logic in `menuScene`
 function menu() {
   helpScene.visible = false;
+  settingsScene.visible = false;
   gameOverScene.visible = false;
   menuScene.visible = true;
   
   let pacmanHitOrangeBall = false;
-  let pacmanHitBox = contain(pacmanMenu, {x: 5*TILE_SIZE,
-                                          y: 12*TILE_SIZE,
-                                          width: 15*TILE_SIZE, 
-                                          height: 13*TILE_SIZE
+  let pacmanHitBox = contain(pacmanMenu, {x: 4*TILE_SIZE+TILE_SIZE/2,
+                                          y: 12*TILE_SIZE-TILE_SIZE/2,
+                                          width: 15*TILE_SIZE-TILE_SIZE/2, 
+                                          height: 13*TILE_SIZE+TILE_SIZE/2
                                          });
 
-  if (pacmanHitBox === "left" || pacmanHitBox === "right") {
+  if (pacmanHitBox === "left") {
+    frames = framesRight;
     pacmanMenu.vx *= -SPEED;
-    pacmanMenu.scale.x *= -1;
+    orangeBallsMenu.forEach( (orangeBall) => {
+      orangeBall.visible = true;
+    });
+  }
+  
+  if (pacmanHitBox === "right") {
+    frames = framesLeft;
+    pacmanMenu.vx *= -SPEED;
     orangeBallsMenu.forEach( (orangeBall) => {
       orangeBall.visible = true;
     });
@@ -875,28 +1300,115 @@ function help() {
   helpScene.visible = true;
 }
 
+// Logic in `settingsScene`
+function settings() {
+  menuScene.visible = false;
+  settingsScene.visible = true;
+}
+
+// Logic in `pauseScene`
+function pause() {
+  if (activeLevel == 1) gameSceneLevel1.visible = false;
+//  if (activeLevel == 2) gameSceneLevel2.visible = false;
+  pauseScene.visible = true;
+//  menuScene.visible = false;
+//  musicPacmanBeginning.stop();
+  
+  if (enterPressed) {
+    enterPressed = false;
+    state = playing1;
+//    minutes = tempMinutes;
+//    seconds = tempSeconds;
+  }
+}
+
 // All the game logic goes here
 // This is your game loop, where you can move sprites and add your game logic
-// Logic in `gameScene`
-function playing() {
+// Logic in `gameSceneLevel1`
+function playing1() {
+//  console.log(activeLevel)
 
   musicPacmanBeginning.stop();
   gameOverScene.visible = false;
   menuScene.visible = false;
-  gameScene.visible = true;
+  pauseScene.visible = false;
+  gameSceneLevel1.visible = true;
   
-  pacman.x += pacman.vx;
-  pacman.y += pacman.vy;
-    
-  if (pacman.x === -26 && (pacman.y === 384 || pacman.y === 385 || pacman.y === 386 || pacman.y === 387 || 
-                           pacman.y === 388 || pacman.y === 389 || pacman.y === 390 || pacman.y === 391)
-     ) {
-    pacman.position.set(GAME_WIDTH+10, pacman.y);
-  } else if (pacman.x === GAME_WIDTH+10 && (pacman.y === 384 || pacman.y === 385 || pacman.y === 386 || 
-                                            pacman.y === 387 || pacman.y === 388 || pacman.y === 389 || 
-                                            pacman.y === 390 || pacman.y === 391)
-            ) {
-    pacman.position.set(-26, pacman.y);
+  if (activeLevel == 1) {
+    pacman = pacmanLevel1;
+    pacman.x += pacman.vx;
+    pacman.y += pacman.vy;
+    pacmanLife1 = pacmanLevel1Life1;
+    pacmanLife2 = pacmanLevel1Life2;
+    devil = devilLevel1;
+    cowboy = cowboyLevel1;
+    princess = princessLevel1;
+    fox = foxLevel1;
+//    console.log(pacman.x, pacman.y)
+    if (pacman.x === -26 && (pacman.y === 384 || pacman.y === 385 || pacman.y === 386 || pacman.y === 387 || 
+                             pacman.y === 388 || pacman.y === 389 || pacman.y === 390 || pacman.y === 391 ||
+                             pacman.y === 392)
+       ) {
+      pacman.position.set(GAME_WIDTH+10, pacman.y);
+    } else if (pacman.x === GAME_WIDTH+10 && (pacman.y === 384 || pacman.y === 385 || pacman.y === 386 || 
+                                              pacman.y === 387 || pacman.y === 388 || pacman.y === 389 || 
+                                              pacman.y === 390 || pacman.y === 391 || pacman.y === 392)
+              ) {
+      pacman.position.set(-26, pacman.y);
+    }
+  }
+  
+  controls();
+}
+
+//function playing2() {
+//  
+//  menuScene.visible = false;
+//  gameOverScene.visible = false;
+//  pauseScene.visible = false;
+//  gameSceneLevel2.visible = true;
+////  console.log('2')
+////  if (activeLevel == 2) {
+////    pacman = pacmanLevel1;
+////    pacman.x += pacman.vx;
+////    pacman.y += pacman.vy;
+////    pacmanLife1 = pacmanLevel1Life1;
+////    pacmanLife2 = pacmanLevel1Life2;
+////    devil = devilLevel1;
+////    cowboy = cowboyLevel1;
+////    princess = princessLevel1;
+////    fox = foxLevel1;
+////    if (pacman.x === -26 && (pacman.y === 513 || pacman.y === 514 || pacman.y === 515 || pacman.y === 516 ||
+////                             pacman.y === 517 || pacman.y === 518 || pacman.y === 519 || pacman.y === 520)
+////       ) {
+////      pacman.position.set(GAME_WIDTH+10, pacman.y);
+////    } else if (pacman.x === GAME_WIDTH+10 && (pacman.y === 513 || pacman.y === 514 || pacman.y === 515 ||
+////                                              pacman.y === 516 || pacman.y === 517 || pacman.y === 518 ||
+////                                              pacman.y === 519 || pacman.y === 520)
+////              ) {
+////      pacman.position.set(-26, pacman.y);
+////    }
+////    if (pacman.x === -26 && (pacman.y === 322 || pacman.y === 323 || pacman.y === 324 || pacman.y === 325 ||
+////                             pacman.y === 326 || pacman.y === 327 || pacman.y === 328)
+////       ) {
+////      pacman.position.set(GAME_WIDTH+10, pacman.y);
+////    } else if (pacman.x === GAME_WIDTH+10 && (pacman.y === 322 || pacman.y === 323 || pacman.y === 324 ||
+////                                              pacman.y === 325 || pacman.y === 326 || pacman.y === 327 ||
+////                                              pacman.y === 328)
+////              ) {
+////      pacman.position.set(-26, pacman.y);
+////    }
+////  
+////  controls();
+//}
+
+function controls() {
+  
+  if (escPressed) {
+    escPressed = false;
+    state = pause;
+//    tempMinutes = minutes;
+//    tempSeconds = seconds;
   }
   
   let pacmanHitBox = false;
@@ -904,7 +1416,6 @@ function playing() {
   let pacmanHitPinkBall = false;
   let pacmanHitGhost = false;
   let ghostHitBox = false;
-  
   
   // Move the ghosts
   moveGhost(devil);
@@ -1013,17 +1524,17 @@ function playing() {
         
         playerScore += GHOST_VALUE;
         playerScoreText.text = playerScore;
-        ghost.position.set();
+//        ghost.position.set();
         
         for (let i = 0; i < ghosts.length; i++) {
           if (ghosts[i] == 0) {
-            ghost.setTexture(id["dablik.png"]);
+            ghost.setTexture(id["devil.png"]);
           } else if (ghosts[i] == 1) {
-            ghost.setTexture(id["princezna.png"]);
+            ghost.setTexture(id["princess.png"]);
           } else if (ghosts[i] == 2) {
-            ghost.setTexture(id["pistolnik.png"]);
+            ghost.setTexture(id["cowboy.png"]);
           } else if (ghosts[i] == 3) {
-            ghost.setTexture(id["lisak.png"]);
+            ghost.setTexture(id["fox.png"]);
           }
         }
         
@@ -1043,24 +1554,26 @@ function playing() {
         }
 
         if (lifeCounter === 2) {
-          gameScene.removeChild(pacmanLife2);
+          if (activeLevel == 1) gameSceneLevel1.removeChild(pacmanLife2);
+//          if (activeLevel == 2) gameSceneLevel2.removeChild(pacmanLife2);
           lifeCounter -= 1;
-          pacman.position.set(9*TILE_SIZE+3, 18*TILE_SIZE+3);
+          pacman.position.set(PACMAN_START_X, PACMAN_START_Y);
           pacman.vx = 0;
           pacman.vy = 0;
-          pacman.rotation = 0;
+          frames = framesRight;
         }
         else if (lifeCounter === 1) {
-          gameScene.removeChild(pacmanLife1);
+          if (activeLevel == 1) gameSceneLevel1.removeChild(pacmanLife1);
+//          if (activeLevel == 2) gameSceneLevel2.removeChild(pacmanLife2);
           lifeCounter -= 1;
-          pacman.position.set(9*TILE_SIZE+3, 18*TILE_SIZE+3);
+          pacman.position.set(PACMAN_START_X, PACMAN_START_Y);
           pacman.vx = 0;
           pacman.vy = 0;
-          pacman.rotation = 0;
+          frames = framesRight;
         }
         else if (lifeCounter === 0) {
           state = end;
-          message.text = "You lost!";
+          message.text = "    YOU LOST!   ";
         }
       }
     }
@@ -1071,6 +1584,7 @@ function playing() {
     
     if (hitTestRectangle(pacman, orangeBall)) {
       pacmanHitOrangeBall = true;
+//      console.log(orangeBalls)
     }
     
     if (pacmanHitOrangeBall) {
@@ -1087,11 +1601,16 @@ function playing() {
         playerScoreText.text = playerScore;
       }
 
-      gameScene.removeChild(orangeBall);
+      if (activeLevel == 1) gameSceneLevel1.removeChild(orangeBall);
+//      if (activeLevel == 2) gameSceneLevel2.removeChild(orangeBall);
 
       if (orangeBalls.length === 0 && pinkBalls.length === 0) {
         state = end;
-        message.text = "You won!";
+//        message.text = "YOU WON LEVEL " + activeLevel + "!";
+        message.text = "    YOU WON!    ";
+        
+//        if (activeLevel == 1) restartGameTooltip.text = "PLAY NEXT LEVEL";
+        if (activeLevel == 1) restartGameTooltip.text = "RESTART GAME!"
       }
     }
   });
@@ -1107,36 +1626,36 @@ function playing() {
       
       if (!btnSoundDisabled.visible) {
         soundPacmanIntermission.play();
-        devil.setTexture(id["dablik_eat.png"]);
-        princess.setTexture(id["princezna_eat.png"]);
-        cowboy.setTexture(id["pistolnik_eat.png"]);
-        fox.setTexture(id["lisak_eat.png"]);
+        devil.setTexture(id["devil-eat.png"]);
+        princess.setTexture(id["princess-eat.png"]);
+        cowboy.setTexture(id["cowboy-eat.png"]);
+        fox.setTexture(id["fox-eat.png"]);
         // pacman eat ghost
         pacman.eatGhost = true;
         
         soundPacmanIntermission.on('end', () => {
-          devil.setTexture(id["dablik.png"]);
-          princess.setTexture(id["princezna.png"]);
-          cowboy.setTexture(id["pistolnik.png"]);
-          fox.setTexture(id["lisak.png"]);
+          devil.setTexture(id["devil.png"]);
+          princess.setTexture(id["princess.png"]);
+          cowboy.setTexture(id["cowboy.png"]);
+          fox.setTexture(id["fox.png"]);
           // pacman dont eat ghost
           pacman.eatGhost = false;
         });
       } else {
         soundPacmanIntermission.play();
         soundPacmanIntermission.volume(0);
-        devil.setTexture(id["dablik_eat.png"]);
-        princess.setTexture(id["princezna_eat.png"]);
-        cowboy.setTexture(id["pistolnik_eat.png"]);
-        fox.setTexture(id["lisak_eat.png"]);
+        devil.setTexture(id["devil-eat.png"]);
+        princess.setTexture(id["princess-eat.png"]);
+        cowboy.setTexture(id["cowboy-eat.png"]);
+        fox.setTexture(id["fox-eat.png"]);
         // pacman eat ghost
         pacman.eatGhost = true;
         
         soundPacmanIntermission.on('end', () => {
-          evil.setTexture(id["dablik.png"]);
-          princess.setTexture(id["princezna.png"]);
-          cowboy.setTexture(id["pistolnik.png"]);
-          fox.setTexture(id["lisak.png"]);
+          devil.setTexture(id["devil.png"]);
+          princess.setTexture(id["princess.png"]);
+          cowboy.setTexture(id["cowboy.png"]);
+          fox.setTexture(id["fox.png"]);
           // pacman dont eat ghost
           pacman.eatGhost = false;
         });
@@ -1149,11 +1668,15 @@ function playing() {
         playerScoreText.text = playerScore;
       }
 
-      gameScene.removeChild(pinkBall);
+      if (activeLevel == 1) gameSceneLevel1.removeChild(pinkBall);
+//      if (activeLevel == 2) gameSceneLevel2.removeChild(pinkBall);
 
       if (pinkBalls.length === 0 && orangeBalls.length === 0) {
         state = end;
-        message.text = "You won!";
+//        message.text = "YOU WON LEVEL " + activeLevel + "!";
+        message.text = "    YOU WON!    ";
+//        if (activeLevel == 1) restartGameTooltip.text = "PLAY NEXT LEVEL";
+        if (activeLevel == 1) restartGameTooltip.text = "RESTART GAME!"
       }
     }
   });
@@ -1168,7 +1691,8 @@ function end() {
   menuScene.visible = false;
   musicPacmanBeginning.stop();
   soundPacmanIntermission.stop();
-  gameScene.visible = false;
+//  gameSceneLevel2.visible = false;
+  gameSceneLevel1.visible = false;
   gameOverScene.visible = true;
 }
 
@@ -1176,7 +1700,7 @@ function end() {
 
 // The `keyboard` helper function
 function keyboard(keyCode) {
-  var key = {};
+  let key = {};
   key.code = keyCode;
   key.isDown = false;
   key.isUp = true;
@@ -1297,7 +1821,7 @@ function hitTestRectangle(r1, r2) {
 
   // `hit` will be either `true` or `false`
   return hit;
-};
+}
 
 // The `hitGreenCube` function
 function hitGreenCube(r1, r2) {
@@ -1336,17 +1860,18 @@ function hitGreenCube(r1, r2) {
     hit = false;
   }
   return hit;
-};
+}
 
 // The `moveGhost` function
 function moveGhost(ghostName) {
   
   ghostName.x += ghostName.vx;
   ghostName.y += ghostName.vy;
+//  console.log(ghostName.x, ghostName.y)
   
-  if (ghostName.x === -26 && ghostName.y === 384) {
+  if (ghostName.x === -26 && (ghostName.y === 384 || ghostName.y === 320 || ghostName.y === 512)) {
     ghostName.position.set(GAME_WIDTH+10, ghostName.y);
-  } else if (ghostName.x === GAME_WIDTH+10 && ghostName.y === 384) {
+  } else if (ghostName.x === GAME_WIDTH+10 && (ghostName.y === 384 || ghostName.y === 320 || ghostName.y === 512)) {
     ghostName.position.set(-26, ghostName.y)
   }
   
@@ -1358,11 +1883,11 @@ function moveGhost(ghostName) {
   
   if (hitRedCube(ghostName, redCube)) {}
   
-};
+}
 
 // The `hitYellowCube` function
 function hitYellowCube(r1, r2) {
-  var hit, vx, vy;
+  let hit, vx, vy;
   hit = false;
   if ((r1.x) == r2.x) {
     if ((r1.y) == r2.y) {
@@ -1382,11 +1907,11 @@ function hitYellowCube(r1, r2) {
     hit = false;
   }
   return hit;
-};
+}
 
 // The `hitRedCube` function
 function hitRedCube(r1, r2) {
-  var hit, vx, vy;
+  let hit, vx, vy;
   hit = false;
   if ((r1.x) == r2.x) {
     if ((r1.y) == r2.y) {
@@ -1406,6 +1931,6 @@ function hitRedCube(r1, r2) {
     hit = false;
   }
   return hit;
-};
+}
 
 /* #GAME SCRIPTS END# */
