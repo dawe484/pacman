@@ -7,3 +7,179 @@ body {
 canvas {
   background-color: #202020;
 }
+
+#loader {
+  font-size: 2em;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: 10px 0 0 -42px;
+  color: #ffcc00;
+}
+
+#myPacman {
+  display: none;
+}
+
+/* by Iddar Olivares */
+#pacman {
+  position: absolute;
+/*  border-radius: 50%;*/
+/*  margin: 0 auto;*/
+/*  margin-top: 5em;*/
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  margin: -75px 0 0 -115px;
+  border-radius: 100em 100em 0 0;
+/*  background: #f00;*/
+  -webkit-transform-origin: bottom;
+  transform-origin: bottom;
+  -webkit-animation: eating-top 0.5s infinite;
+  animation: eating-top 0.5s infinite;
+}
+
+#pacman,
+#pacman::before {
+  width: 70px;
+  height: calc(35px);
+  background: #ffcc00;
+}
+
+#pacman::before {
+  content: '';
+  display: block;
+  margin-top: calc(35px);
+  position: absolute;
+  -webkit-transform-origin: top;
+  transform-origin: top;
+  border-radius: 0 0 100em 100em;
+  -webkit-transform: rotate(80deg);
+  transform: rotate(80deg);
+  -webkit-animation: eating-bottom 0.5s infinite;
+  animation: eating-bottom 0.5s infinite;
+}
+
+#pacman::after {
+  position: absolute;
+  border-radius: 100em;
+  content: '';
+  display: block;
+  height: 20px;
+  width: 20px;
+  margin-top: calc(25px);
+  margin-left: calc(25px);
+  -webkit-transform-origin: center;
+  transform-origin: center;
+  -webkit-animation: center 0.5s infinite, ball 0.5s -0.33s infinite linear;
+  animation: center 0.5s infinite, ball 0.5s -0.33s infinite linear;
+}
+
+@-webkit-keyframes eating-top {
+  0% {
+    -webkit-transform: rotate(-40deg);
+    transform: rotate(-40deg);
+  }
+  50% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(-40deg);
+    transform: rotate(-40deg);
+  }
+}
+@keyframes eating-top {
+  0% {
+    -webkit-transform: rotate(-40deg);
+    transform: rotate(-40deg);
+  }
+  50% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(-40deg);
+    transform: rotate(-40deg);
+  }
+}
+
+@-webkit-keyframes eating-bottom {
+  0% {
+    -webkit-transform: rotate(80deg);
+    transform: rotate(80deg);
+  }
+  50% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(80deg);
+    transform: rotate(80deg);
+  }
+}
+
+@keyframes eating-bottom {
+  0% {
+    -webkit-transform: rotate(80deg);
+    transform: rotate(80deg);
+  }
+  50% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(80deg);
+    transform: rotate(80deg);
+  }
+}
+
+@-webkit-keyframes center {
+  0% {
+    -webkit-transform: rotate(40deg);
+    transform: rotate(40deg);
+  }
+  50% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(40deg);
+    transform: rotate(40deg);
+  }
+}
+
+@keyframes center {
+  0% {
+    -webkit-transform: rotate(40deg);
+    transform: rotate(40deg);
+  }
+  50% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(40deg);
+    transform: rotate(40deg);
+  }
+}
+
+@-webkit-keyframes ball {
+  0% {
+    opacity: .7;
+    box-shadow: 70px 0 0 0 #ffcc00, 120px 0 0 0 #ffcc00, 170px 0 0 0 #ffcc00, 220px 0 0 0 #ffcc00;
+  }
+  100% {
+    box-shadow: 20px 0 0 0 #ffcc00, 70px 0 0 0 #ffcc00, 120px 0 0 0 #ffcc00, 170px 0 0 0 #ffcc00;
+  }
+}
+
+@keyframes ball {
+  0% {
+    opacity: .7;
+    box-shadow: 70px 0 0 0 #ffcc00, 120px 0 0 0 #ffcc00, 170px 0 0 0 #ffcc00, 220px 0 0 0 #ffcc00;
+  }
+  100% {
+    box-shadow: 20px 0 0 0 #ffcc00, 70px 0 0 0 #ffcc00, 120px 0 0 0 #ffcc00, 170px 0 0 0 #ffcc00;
+  }
+}

@@ -1,10 +1,29 @@
-/*
- * PACMAN - author: David Krénar
- * sound source: http://www.classicgaming.cc/\nclassics/pac-man/sounds
- * sprite source: ghosts - http://opengameart.org/content/ghosts
- *                box, balls - http://opengameart.org/content/winter-platformer-game-tileset
+/*!
+ * PAC-MAN 2017 - v1.0.3
+ * Compiled Thu, 11 May 2017 15:43:56 UTC
+ *
+ * sound source: http://www.classicgaming.cc/classics/pac-man/sounds
+ * sprite source: http://opengameart.org/content/ghosts
+ *                http://opengameart.org/content/winter-platformer-game-tileset
+ *                https://opengameart.org/content/medieval-game-button-pack
+ *
+ * pacman.js is licensed under the MIT License.
+ * http://www.opensource.org/licenses/mit-license
  */
 'use strict';
+/* index.html loader */
+let loading;
+
+function myLoading() {
+  loading = setTimeout(showPage(), 3000);
+}
+
+function showPage() {
+  document.getElementById("pacman").style.display = "none";
+  document.getElementById("loader").style.display = "none";
+  document.getElementById("myPacman").style.display = "block";
+}
+
 /* #GAME SCRIPTS START# */
 
 // Aliases
@@ -15,7 +34,8 @@ const Container = PIXI.Container,
       TextureCache = PIXI.utils.TextureCache,
       Sprite = PIXI.Sprite,
       Text = PIXI.Text,
-      TextStyle = PIXI.TextStyle;
+      TextStyle = PIXI.TextStyle,
+      Camera = PIXI.Camera3d;
 
 // Define a few globals here
 const GAME_WIDTH = 608,
@@ -182,13 +202,21 @@ function init() {
   renderer.backgroundColor = 0x000000;
 
   if (renderer instanceof PIXI.CanvasRenderer) {
-    console.log("Render: Canvas");
-    console.log("Device pixel ratio:", window.devicePixelRatio);
+//    console.log("Render: Canvas");
+//    console.log("Device pixel ratio:", window.devicePixelRatio);
   } else {
-    console.log("Render: WebGL");
-    console.log("Device pixel ratio:", window.devicePixelRatio);
+//    console.log("Render: WebGL");
+//    console.log("Device pixel ratio:", window.devicePixelRatio);
   }
 
+  if (navigator.userAgent.toLowerCase().indexOf('chrome') > -1) {
+    var args = ['\n %c %c %c PAC-MAN 2017' + ' - David Krénar %c  %c  https://github.com/dawe484/pacman/  %c  \n\n', 'background: #ffcc00; padding:5px 0;', 'background: #ffcc00; padding:5px 0;', 'color: #ffcc00; background: #030307; padding:5px 0;', 'background: #ffcc00; padding:5px 0;', 'background: #ffe680; padding:5px 0;', 'background: #ffcc00; padding:5px 0;'];
+
+    window.console.log.apply(console, args);
+  } else if (window.console) {
+    window.console.log('PAC-MAN 2017' + ' - David Krénar - https://github.com/dawe484/pacman/');
+  }
+  
   // Add the canvas to the HTML document
   document.body.appendChild(renderer.view);
 
@@ -197,6 +225,7 @@ function init() {
 
   if (window.innerHeight <= GAME_HEIGHT) {
     resize();
+    window.addEventListener("resize", resize);
   }
   
 //  // ON THE TOP OF OUR SCENE WE PUT A FPS COUNTER FROM MR.DOOB - stats.js ////
@@ -226,7 +255,7 @@ function init() {
   
   // This `setup` function will run when the image has loaded
   function setup() {
-    console.log("All files loaded");
+//    console.log("All files loaded");
     
     // Initialize sounds here music in game `menuScene`
     musicPacmanBeginning = new Howl({
@@ -1419,17 +1448,21 @@ function controls() {
   
   // Move the ghosts
   moveGhost(devil);
+  ghostMoving(devil);
  
   if (playerScore >= 300) {
     moveGhost(princess);
+    ghostMoving(princess);
   }
     
   if (playerScore >= 600) {
     moveGhost(cowboy);
+    ghostMoving(cowboy);
   }
   
   if (playerScore >= 900) {
     moveGhost(fox);
+    ghostMoving(fox);
   }
   
   if (hitTestRectangle(pacman, iceCube)) {
@@ -1825,33 +1858,54 @@ function hitTestRectangle(r1, r2) {
 
 // The `hitGreenCube` function
 function hitGreenCube(r1, r2) {
-
+//  console.log(r2.x+r2.width/2, r2.y+r2.height/2)
   let hit, vx, vy;
   hit = false;
+  
+//  if ((r1.x+TILE_SIZE/2-2 < r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2-2 < r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2-2 < r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2-1 < r2.y+TILE_SIZE/2) ||
+//      (r1.x+TILE_SIZE/2-1 < r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2-2 < r2.y+TILE_SIZE/2) ||
+//      (r1.x+TILE_SIZE/2-2 < r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2+1 > r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2-2 < r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2+2 > r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2-1 < r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2-2 < r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2+1 > r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2-2 < r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2+2 > r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2-2 < r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2-1 < r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2+1 > r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2+1 > r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2+2 > r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2+2 > r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2+2 > r2.y+TILE_SIZE/2) ||
+//      (r1.x+TILE_SIZE/2+2 > r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2-1 < r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2+2 > r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2+1 > r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2-1 < r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2-1 < r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2-1 < r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2+1 > r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2+1 > r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2-1 < r2.y+TILE_SIZE/2) || 
+//      (r1.x+TILE_SIZE/2+1 > r2.x+TILE_SIZE/2 && r1.y+TILE_SIZE/2+1 > r2.y+TILE_SIZE/2)
+//     ) {
+//    r1.x = r2.x;
+//    r1.y = r2.y;
+//  }
 
-  if ((r1.x) == r2.x) {
-    if ((r1.y) == r2.y) {
-      hit = true;
-      
-      if (hit) {
-        direction = Math.floor((Math.random() * 4) + 1);
-        if (direction == 1) {
-          r1.path = moves.UP
-          r1.vx = 0
-          r1.vy = -GHOST_SPEED
-        } else if (direction == 2) {
-          r1.path = moves.RIGHT
-          r1.vx = GHOST_SPEED
-          r1.vy = 0
-        } else if (direction == 3) {
-          r1.path = moves.DOWN
-          r1.vx = 0
-          r1.vy = GHOST_SPEED
-        } else if (direction == 4) {
-          r1.path = moves.LEFT
-          r1.vx = -GHOST_SPEED
-          r1.vy = 0
-        }
+  if (((r1.x+TILE_SIZE/2 == r2.x+TILE_SIZE/2) && (r1.y+TILE_SIZE/2 == r2.y+TILE_SIZE/2))) {
+//    console.log(r1.x+TILE_SIZE/2, r1.y+TILE_SIZE/2, r2.x+r2.width/2, r2.y+r2.height/2)
+    hit = true;
+
+    if (hit) {
+      direction = Math.floor((Math.random() * 4) + 1);
+      if (direction == 1) {
+        r1.path = moves.UP
+        r1.vx = 0
+        r1.vy = -GHOST_SPEED
+      } else if (direction == 2) {
+        r1.path = moves.RIGHT
+        r1.vx = GHOST_SPEED
+        r1.vy = 0
+      } else if (direction == 3) {
+        r1.path = moves.DOWN
+        r1.vx = 0
+        r1.vy = GHOST_SPEED
+      } else if (direction == 4) {
+        r1.path = moves.LEFT
+        r1.vx = -GHOST_SPEED
+        r1.vy = 0
       }
     } else {
       hit = false;
@@ -1876,7 +1930,29 @@ function moveGhost(ghostName) {
   }
   
   greenCubes.forEach( (greenCube) => {
-    if (hitGreenCube(ghostName, greenCube)) {}
+    if (hitGreenCube(ghostName, greenCube)) {
+//      if ((ghostName.x+TILE_SIZE/2-2 < greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2-2 < greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2-2 < greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2-1 < greenCube.y+TILE_SIZE/2) ||
+//      (ghostName.x+TILE_SIZE/2-1 < greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2-2 < greenCube.y+TILE_SIZE/2) ||
+//      (ghostName.x+TILE_SIZE/2-2 < greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2+1 > greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2-2 < greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2+2 > greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2-1 < greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2-2 < greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2+1 > greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2-2 < greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2+2 > greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2-2 < greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2-1 < greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2+1 > greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2+1 > greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2+2 > greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2+2 > greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2+2 > greenCube.y+TILE_SIZE/2) ||
+//      (ghostName.x+TILE_SIZE/2+2 > greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2-1 < greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2+2 > greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2+1 > greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2-1 < greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2-1 < greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2-1 < greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2+1 > greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2+1 > greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2-1 < greenCube.y+TILE_SIZE/2) || 
+//      (ghostName.x+TILE_SIZE/2+1 > greenCube.x+TILE_SIZE/2 && ghostName.y+TILE_SIZE/2+1 > greenCube.y+TILE_SIZE/2)) {
+//        ghostName.x = greenCube.x;
+//        ghostName.y = greenCube.y;
+//      }
+//      ghostMoving(ghostName);
+    }
   });
   
   if (hitYellowCube(ghostName, yellowCube)) {}
@@ -1931,6 +2007,135 @@ function hitRedCube(r1, r2) {
     hit = false;
   }
   return hit;
+}
+
+let coorDevil = [], coorPrincess = [], coorCowboy = [], coorFox = [], movingDevilArray = [], movingPrincessArray = [],
+    movingCowboyArray = [], movingFoxArray = [];
+
+function ghostMoving(ghostName) {
+  
+//  console.log(ghostName._texture.textureCacheIds)
+  
+  if (ghostName._texture.textureCacheIds == "devil.png") {
+//    console.log('devil')
+    coorDevil.push(ghostName.x);
+    coorDevil.push(ghostName.y);
+    movingDevilArray.push(coorDevil);
+    coorDevil = [];
+//    console.log(movingDevilArray)
+    if (movingDevilArray.length == 6) {
+//      console.log(movingDevilArray[0], movingDevilArray[1], movingDevilArray[2], movingDevilArray[3], 
+//                  movingDevilArray[4], movingDevilArray[5]);
+      if (movingDevilArray[0][0] == movingDevilArray[1][0] && 
+          movingDevilArray[1][0] == movingDevilArray[2][0] &&
+          movingDevilArray[2][0] == movingDevilArray[3][0] &&
+          movingDevilArray[3][0] == movingDevilArray[4][0] &&
+          movingDevilArray[4][0] == movingDevilArray[5][0] &&
+          movingDevilArray[0][1] == movingDevilArray[1][1] &&
+          movingDevilArray[1][1] == movingDevilArray[2][1] &&
+          movingDevilArray[2][1] == movingDevilArray[3][1] &&
+          movingDevilArray[3][1] == movingDevilArray[4][1] &&
+          movingDevilArray[4][1] == movingDevilArray[5][1]
+         ) {
+//          console.log('DEVIL!!!!!!!!!!!!!!!!')
+//          console.log('!!!!!!!!!!!!!!!DEVIL!')
+          ghostName.x = Math.round(movingDevilArray[0][0]/TILE_SIZE)*TILE_SIZE;
+          ghostName.y = Math.round(movingDevilArray[0][1]/TILE_SIZE)*TILE_SIZE;
+      }
+//      console.log(movingDevilArray[0][0], movingDevilArray[0][1])
+      movingDevilArray = []
+    }
+  }
+  
+  if (ghostName._texture.textureCacheIds == "princess.png") {
+//    console.log('devil')
+    coorPrincess.push(ghostName.x);
+    coorPrincess.push(ghostName.y);
+    movingPrincessArray.push(coorPrincess);
+    coorPrincess = [];
+//    console.log(movingDevilArray)
+    if (movingPrincessArray.length == 6) {
+//      console.log(movingPrincessArray[0], movingPrincessArray[1], movingPrincessArray[2], movingPrincessArray[3])
+      if (movingPrincessArray[0][0] == movingPrincessArray[1][0] && 
+          movingPrincessArray[1][0] == movingPrincessArray[2][0] &&
+          movingPrincessArray[2][0] == movingPrincessArray[3][0] &&
+          movingPrincessArray[3][0] == movingPrincessArray[4][0] &&
+          movingPrincessArray[4][0] == movingPrincessArray[5][0] &&
+          movingPrincessArray[0][1] == movingPrincessArray[1][1] &&
+          movingPrincessArray[1][1] == movingPrincessArray[2][1] &&
+          movingPrincessArray[2][1] == movingPrincessArray[3][1] &&
+          movingPrincessArray[3][1] == movingPrincessArray[4][1] &&
+          movingPrincessArray[4][1] == movingPrincessArray[5][1]
+         ) {
+//          console.log('PRINCESS!!!!!!!!!!!!!!!!')
+//          console.log('!!!!!!!!!!!!!!!PRINCESS!')
+          ghostName.x = Math.round(movingPrincessArray[0][0]/TILE_SIZE)*TILE_SIZE;
+          ghostName.y = Math.round(movingPrincessArray[0][1]/TILE_SIZE)*TILE_SIZE;
+      }
+//      console.log(movingDevilArray[0][0], movingDevilArray[0][1])
+      movingPrincessArray = []
+    }
+  }
+  
+  if (ghostName._texture.textureCacheIds == "cowboy.png") {
+//    console.log('devil')
+    coorCowboy.push(ghostName.x);
+    coorCowboy.push(ghostName.y);
+    movingCowboyArray.push(coorCowboy);
+    coorCowboy = [];
+//    console.log(movingDevilArray)
+    if (movingCowboyArray.length == 6) {
+//      console.log(movingPrincessArray[0], movingPrincessArray[1], movingPrincessArray[2], movingPrincessArray[3])
+      if (movingCowboyArray[0][0] == movingCowboyArray[1][0] && 
+          movingCowboyArray[1][0] == movingCowboyArray[2][0] &&
+          movingCowboyArray[2][0] == movingCowboyArray[3][0] &&
+          movingCowboyArray[3][0] == movingCowboyArray[4][0] &&
+          movingCowboyArray[4][0] == movingCowboyArray[5][0] &&
+          movingCowboyArray[0][1] == movingCowboyArray[1][1] &&
+          movingCowboyArray[1][1] == movingCowboyArray[2][1] &&
+          movingCowboyArray[2][1] == movingCowboyArray[3][1] &&
+          movingCowboyArray[3][1] == movingCowboyArray[4][1] &&
+          movingCowboyArray[4][1] == movingCowboyArray[5][1]
+         ) {
+//          console.log('COWBOY!!!!!!!!!!!!!!!!')
+//          console.log('!!!!!!!!!!!!!!!COWBOY!')
+          ghostName.x = Math.round(movingCowboyArray[0][0]/TILE_SIZE)*TILE_SIZE;
+          ghostName.y = Math.round(movingCowboyArray[0][1]/TILE_SIZE)*TILE_SIZE;
+      }
+//      console.log(movingDevilArray[0][0], movingDevilArray[0][1])
+      movingCowboyArray = []
+    }
+  }
+  
+  if (ghostName._texture.textureCacheIds == "fox.png") {
+//    console.log('devil')
+    coorFox.push(ghostName.x);
+    coorFox.push(ghostName.y);
+    movingFoxArray.push(coorFox);
+    coorFox = [];
+//    console.log(movingDevilArray)
+    if (movingFoxArray.length == 6) {
+//      console.log(movingPrincessArray[0], movingPrincessArray[1], movingPrincessArray[2], movingPrincessArray[3])
+      if (movingFoxArray[0][0] == movingFoxArray[1][0] && 
+          movingFoxArray[1][0] == movingFoxArray[2][0] &&
+          movingFoxArray[2][0] == movingFoxArray[3][0] &&
+          movingFoxArray[3][0] == movingFoxArray[4][0] &&
+          movingFoxArray[4][0] == movingFoxArray[5][0] &&
+          movingFoxArray[0][1] == movingFoxArray[1][1] &&
+          movingFoxArray[1][1] == movingFoxArray[2][1] &&
+          movingFoxArray[2][1] == movingFoxArray[3][1] &&
+          movingFoxArray[3][1] == movingFoxArray[4][1] &&
+          movingFoxArray[4][1] == movingFoxArray[5][1]
+         ) {
+//          console.log('FOX!!!!!!!!!!!!!!!!')
+//          console.log('!!!!!!!!!!!!!!!FOX!')
+          ghostName.x = Math.round(movingFoxArray[0][0]/TILE_SIZE)*TILE_SIZE;
+          ghostName.y = Math.round(movingFoxArray[0][1]/TILE_SIZE)*TILE_SIZE;
+      }
+//      console.log(movingDevilArray[0][0], movingDevilArray[0][1])
+      movingFoxArray = []
+    }
+  }
 }
 
 /* #GAME SCRIPTS END# */
