@@ -223,10 +223,10 @@ function init() {
   // Create a container object called the 'stage'
   stage = new Container();
 
-  if (window.innerHeight <= GAME_HEIGHT) {
+//  if (window.innerHeight <= GAME_HEIGHT) {
     resize();
-    window.addEventListener("resize", resize);
-  }
+//    window.addEventListener("resize", resize);
+//  }
   
 //  // ON THE TOP OF OUR SCENE WE PUT A FPS COUNTER FROM MR.DOOB - stats.js ////
 //  stats = new Stats();
@@ -235,7 +235,7 @@ function init() {
 //  document.body.appendChild(stats.domElement);
 
   // Listen for and adapt to changes to the screen size user changing the window or rotating their device
-//  window.addEventListener("resize", resize);
+  window.addEventListener("resize", resize);
   
   if (window.devicePixelRatio >= 4) {
     // loader.add("assets/images/pacmanImages@2x.json");
