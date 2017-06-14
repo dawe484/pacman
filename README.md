@@ -1,5 +1,6 @@
 # PAC-MAN 2017
 ## School project to subject 'Innovation Course for the IT Specialists'
+Game website: https://akela.mendelu.cz/~xkrenar/ipi/pacman/
 ### Game Menu Screenshot
 ![pacman_screenshot_menu](https://cloud.githubusercontent.com/assets/11950061/25784378/06101786-336c-11e7-8463-624a045da546.jpg)
 ### Game Scene Screenshot
